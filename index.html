@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="IRS T212"/>
+<meta name="apple-mobile-web-app-title" content="IRS Wizard"/>
 <meta name="theme-color" content="#0f1117"/>
-<title>IRS T212</title>
+<title>IRS Wizard</title>
 <style>
 :root {
   --bg: #0f1117;
@@ -195,8 +195,6 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
 .tx-bottom { display: flex; justify-content: space-between; align-items: center; }
 .tx-meta { font-size: 12px; color: var(--muted); }
 .badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
-.badge-buy { background: rgba(45,212,160,0.12); color: var(--gain); }
-.badge-sell { background: rgba(242,95,92,0.12); color: var(--loss); }
 .badge-div { background: rgba(247,201,72,0.12); color: var(--dividend); }
 .badge-int { background: rgba(167,139,250,0.12); color: var(--interest); }
 
@@ -212,7 +210,6 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
 .fifo-row:last-of-type { border-bottom: none; }
 .fifo-row .fk { font-size: 12px; color: var(--muted); }
 .fifo-row .fv { font-size: 12px; font-family: var(--mono); }
-.fifo-lots { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); line-height: 1.6; }
 
 /* ── IRS screen ── */
 .irs-block {
@@ -242,6 +239,7 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
 .msel-check svg { width:13px; height:13px; opacity:0; transition:opacity 0.15s; }
 .msel-check.checked svg { opacity:1; }
 .msel-option-label { font-size:14px; color:var(--text); flex:1; }
+.msel-btn { background:var(--surface); border:1px solid var(--border); border-radius:10px; color:var(--text); padding:8px 12px; font-size:13px; font-family:var(--sans); flex:1; text-align:left; display:flex; justify-content:space-between; align-items:center; gap:6px; cursor:pointer; }
 .msel-btn .msel-label { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
 .export-row { display: flex; gap: 10px; margin-top: 16px; }
@@ -260,7 +258,7 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
   <div class="topbar">
     <div class="logo">T2</div>
     <div class="topbar-text" style="flex:1">
-      <h1>IRS Trading 212</h1>
+      <h1>IRS Wizard</h1>
       <p>Trading 212 · DEGIRO · E*Trade · Portugal</p>
     </div>
     <select id="globalYearSelect" class="hidden" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:8px 10px;font-size:13px;font-weight:600;font-family:var(--sans);margin-right:8px;flex-shrink:0"></select>
@@ -309,7 +307,7 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
         <div class="how-step"><div class="step-num">2</div><div class="step-text">Clica o ícone de <strong>Download</strong> → <strong>CSV</strong></div></div>
       </div>
       <div style="text-align:center;margin-top:18px;padding-bottom:4px">
-        <button id="versionTag" style="background:none;border:none;color:var(--muted);font-size:11px;font-family:var(--mono);padding:6px 10px;cursor:pointer">v1.0.0</button>
+        <button id="versionTag" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:11px;font-family:var(--mono);padding:6px 12px;cursor:pointer">v1.1.0 · Notas de versão</button>
       </div>
     </div>
 
@@ -360,7 +358,10 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
       </div>
       <div id="irsContent" class="hidden">
         <div id="irsProgress" style="display:none;flex-direction:column;gap:8px;background:var(--bg);border-bottom:1px solid var(--border);padding:12px 16px 14px;margin:-16px -16px 14px;position:sticky;top:0;z-index:5;box-shadow:0 4px 12px rgba(0,0,0,0.3)">
-          <div class="section-title" style="margin:0">Resumo IRS — Anexo J</div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="section-title" style="margin:0">Resumo IRS — Anexo J</div>
+            <button id="irsClearChecksBtn" style="background:none;border:none;color:var(--accent);font-size:12px;font-weight:600;font-family:var(--sans);cursor:pointer;white-space:nowrap">Limpar tudo</button>
+          </div>
           <div>
             <div class="irs-progress-text" style="font-size:12px;color:var(--muted);margin-bottom:6px">0 de 0 reportados</div>
             <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden">
@@ -385,15 +386,15 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
       </div>
       <div id="txnsContent" class="hidden">
         <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-          <button class="msel-btn" id="mselTypeBtn" data-msel="type" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:8px 12px;font-size:13px;font-family:var(--sans);flex:1;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:6px">
+          <button class="msel-btn" id="mselTypeBtn" data-msel="type">
             <span class="msel-label" id="mselTypeLabel">Todos os tipos</span><span style="color:var(--muted);font-size:11px">▾</span>
           </button>
-          <button class="msel-btn" id="mselBrokerBtn" data-msel="broker" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:8px 12px;font-size:13px;font-family:var(--sans);flex:1;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:6px">
+          <button class="msel-btn" id="mselBrokerBtn" data-msel="broker">
             <span class="msel-label" id="mselBrokerLabel">Todas as corretoras</span><span style="color:var(--muted);font-size:11px">▾</span>
           </button>
         </div>
         <div style="display:flex;gap:8px;margin-bottom:8px">
-          <button class="msel-btn" id="mselTickerBtn" data-msel="ticker" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:8px 12px;font-size:13px;font-family:var(--sans);flex:1;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:6px">
+          <button class="msel-btn" id="mselTickerBtn" data-msel="ticker">
             <span class="msel-label" id="mselTickerLabel">Todos os tickers</span><span style="color:var(--muted);font-size:11px">▾</span>
           </button>
         </div>
@@ -439,8 +440,8 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
     <div style="position:relative;width:100%;background:var(--surface);border-radius:20px 20px 0 0;max-height:80vh;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom,0px)">
       <div style="padding:16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
         <div>
-          <div style="font-size:15px;font-weight:700">IRS Trading 212</div>
-          <div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:1px">Versão 1.0.0</div>
+          <div style="font-size:15px;font-weight:700">IRS Wizard</div>
+          <div id="versionModalSubtitle" style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:1px">Versão 1.1.0</div>
         </div>
         <button id="versionCloseBtn" style="background:var(--surface2);border:none;border-radius:8px;width:32px;height:32px;color:var(--text);font-size:16px;cursor:pointer">✕</button>
       </div>
@@ -519,7 +520,21 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ── Version / changelog ──────────────────────────────────────────────────────
+const APP_VERSION = '1.1.1';
 const CHANGELOG = [
+  { version: '1.1.1', notes: [
+    'Botão "Limpar tudo" na barra de progresso do separador IRS',
+    'Corrigido: badges de corretora no Resumo agora refletem apenas as corretoras com transações no ano selecionado',
+    'Corrigido: trocar de ano já não força regresso ao separador Resumo',
+  ]},
+  { version: '1.1.0', notes: [
+    'Renomeado para IRS Wizard',
+    'Bloqueio de zoom (pinch e duplo toque) para experiência mais nativa',
+    'Botão "Limpar todos os filtros" em Transações',
+    'Pesquisa adicionada aos filtros multi-seleção',
+    'Modo escuro como predefinição (ignora preferência do sistema)',
+    'Otimizações de código: remoção de CSS morto e duplicações',
+  ]},
   { version: '1.0.0', notes: [
     'Importação multi-corretora (Trading 212, DEGIRO, E*Trade) com deteção automática de duplicados',
     'Cálculo FIFO por lote com encargos proporcionais',
@@ -534,6 +549,10 @@ const CHANGELOG = [
 ];
 
 function renderVersionNotes() {
+  const subtitle = document.getElementById('versionModalSubtitle');
+  if (subtitle) subtitle.textContent = `Versão ${APP_VERSION}`;
+  const tag = document.getElementById('versionTag');
+  if (tag) tag.textContent = `v${APP_VERSION} · Notas de versão`;
   const container = document.getElementById('versionNotes');
   container.innerHTML = CHANGELOG.map(entry => `
     <div style="margin-bottom:18px">
@@ -550,6 +569,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const modal = document.getElementById('versionModal');
   const backdrop = document.getElementById('versionBackdrop');
   const closeBtn = document.getElementById('versionCloseBtn');
+  if (tag) tag.textContent = `v${APP_VERSION} · Notas de versão`;
   if (tag && modal) {
     tag.addEventListener('click', () => {
       renderVersionNotes();
@@ -680,6 +700,7 @@ function mergeAndCalculate() {
   populateYears();
   document.getElementById('controls').classList.remove('hidden');
   calculate();
+  goTo('summary');
 }
 
 function renderFileList() {
@@ -1070,7 +1091,7 @@ function setYear(year) {
 
 document.getElementById('yearSelect').addEventListener('change', e => setYear(e.target.value));
 document.getElementById('globalYearSelect').addEventListener('change', e => setYear(e.target.value));
-document.getElementById('calcBtn').addEventListener('click', calculate);
+document.getElementById('calcBtn').addEventListener('click', () => { calculate(); goTo('summary'); });
 
 // ── FIFO engine ─────────────────────────────────────────────────────────────
 function calculate() {
@@ -1081,28 +1102,40 @@ function calculate() {
   const sorted = [...allRows].sort((a,b) => a.date - b.date);
   const queues = {};
   const fifoSales = [], dividends = [], interests = [];
+  const brokersThisYear = new Set();
 
   for (const row of sorted) {
     if (!queues[row.ticker]) queues[row.ticker] = [];
+    const rowYear = row.date.getFullYear();
     if (row.type === 'BUY') {
       queues[row.ticker].push({ date: row.date, shares: row.shares, price: row.price, charges: row.charges });
+      if (rowYear === year) brokersThisYear.add(row.broker);
     } else if (row.type === 'SELL') {
       const sale = processSale(row, queues[row.ticker]);
       sale.isin = row.isin || '';
-      if (row.date.getFullYear() === year) fifoSales.push(sale);
-    } else if (row.type === 'DIVIDEND' && row.date.getFullYear() === year) {
+      if (rowYear === year) { fifoSales.push(sale); brokersThisYear.add(row.broker); }
+    } else if (row.type === 'DIVIDEND' && rowYear === year) {
       dividends.push({ date: row.date, ticker: row.ticker, name: row.name, gross: row.total, withholding: row.withholding, isin: row.isin || '' });
-    } else if (row.type === 'INTEREST' && row.date.getFullYear() === year) {
+      brokersThisYear.add(row.broker);
+    } else if (row.type === 'INTEREST' && rowYear === year) {
       interests.push({ date: row.date, description: row.name || row.raw || 'Juros', gross: row.total, withholding: row.withholding, broker: row.broker || '' });
+      brokersThisYear.add(row.broker);
     }
   }
 
-  results = { year, fifoSales, dividends, interests };
+  results = { year, fifoSales, dividends, interests, brokers: [...brokersThisYear].filter(Boolean) };
   renderAll();
-  const brokerNames = { T212: 'Trading 212', DEGIRO: 'DEGIRO', ETRADE: 'E*Trade' };
+  renderBrokerBadges();
+}
+
+function renderBrokerBadges() {
   const badge = document.getElementById('brokerBadge');
-  if (badge) badge.textContent = brokerNames[document._detectedBroker] || document._detectedBroker || '';
-  goTo('summary');
+  if (!badge || !results) return;
+  const colors = { T212: 'var(--accent)', DEGIRO: 'var(--gain)', ETRADE: 'var(--dividend)' };
+  const names  = { T212: 'Trading 212', DEGIRO: 'DEGIRO', ETRADE: 'E*Trade' };
+  badge.innerHTML = (results.brokers || []).map(b => `
+    <span style="font-size:10px;padding:2px 8px;border-radius:6px;background:${colors[b]||'var(--muted)'}22;color:${colors[b]||'var(--muted)'};font-weight:600;margin-left:6px;display:inline-block">${names[b]||b}</span>
+  `).join('');
 }
 
 function processSale(row, queue) {
@@ -1275,6 +1308,8 @@ document.addEventListener('DOMContentLoaded', () => {
       renderTxns();
     });
   }
+  const irsClearBtn = document.getElementById('irsClearChecksBtn');
+  if (irsClearBtn) irsClearBtn.addEventListener('click', clearAllIrsChecks);
 });
 
 function renderTxns() {
@@ -1659,6 +1694,16 @@ function toggleIrsCheck(el) {
   el.classList.toggle('checked', checkedItems[id]);
   const box = el.querySelector('.irs-checkbox');
   if (box) box.classList.toggle('checked', checkedItems[id]);
+  updateIrsProgress();
+}
+
+function clearAllIrsChecks() {
+  checkedItems = {};
+  document.querySelectorAll('.irs-check-row.checked').forEach(row => {
+    row.classList.remove('checked');
+    const box = row.querySelector('.irs-checkbox');
+    if (box) box.classList.remove('checked');
+  });
   updateIrsProgress();
 }
 
