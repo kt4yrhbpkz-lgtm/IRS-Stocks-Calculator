@@ -2,6 +2,9 @@
 <html lang="pt">
 <head>
 <meta charset="UTF-8"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
@@ -307,7 +310,7 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
         <div class="how-step"><div class="step-num">2</div><div class="step-text">Clica o ícone de <strong>Download</strong> → <strong>CSV</strong></div></div>
       </div>
       <div style="text-align:center;margin-top:18px;padding-bottom:4px">
-        <button id="versionTag" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:11px;font-family:var(--mono);padding:6px 12px;cursor:pointer">v1.1.0 · Notas de versão</button>
+        <button id="versionTag" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:11px;font-family:var(--mono);padding:6px 12px;cursor:pointer">v1.1.1 · Notas de versão</button>
       </div>
     </div>
 
@@ -441,7 +444,7 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
       <div style="padding:16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
         <div>
           <div style="font-size:15px;font-weight:700">IRS Wizard</div>
-          <div id="versionModalSubtitle" style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:1px">Versão 1.1.0</div>
+          <div id="versionModalSubtitle" style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:1px">Versão 1.1.1</div>
         </div>
         <button id="versionCloseBtn" style="background:var(--surface2);border:none;border-radius:8px;width:32px;height:32px;color:var(--text);font-size:16px;cursor:pointer">✕</button>
       </div>
@@ -521,6 +524,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ── Version / changelog ──────────────────────────────────────────────────────
 const APP_VERSION = '1.1.1';
+
+// Check the live deployed file in the background for a newer version.
+// Catches the case where iOS serves a stale cached copy of this page (common
+// with "Add to Home Screen" PWAs) even after the server has the latest file.
+function checkForUpdate() {
+  fetch(location.href, { cache: 'no-store' })
+    .then(r => r.text())
+    .then(html => {
+      const m = html.match(/const APP_VERSION = '([\d.]+)'/);
+      if (m && m[1] !== APP_VERSION) showUpdateBanner(m[1]);
+    })
+    .catch(() => {}); // offline or blocked — fail silently
+}
+
+function showUpdateBanner(newVersion) {
+  if (document.getElementById('updateBanner')) return; // already shown
+  const banner = document.createElement('div');
+  banner.id = 'updateBanner';
+  banner.style.cssText = `
+    position:fixed; top:0; left:0; right:0; z-index:200;
+    background:var(--accent); color:#fff; padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 10px;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    font-family:${getComputedStyle(document.documentElement).getPropertyValue('--sans') || 'sans-serif'};
+    font-size:13px; font-weight:600; box-shadow:0 2px 10px rgba(0,0,0,0.3);
+  `;
+  banner.innerHTML = `
+    <span>Nova versão disponível (v${newVersion})</span>
+    <button id="updateReloadBtn" style="background:#fff;color:var(--accent);border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">Atualizar</button>
+  `;
+  document.body.appendChild(banner);
+  document.getElementById('updateReloadBtn').addEventListener('click', () => {
+    location.reload(true);
+  });
+}
+
+// Run once shortly after load, then periodically while the app stays open
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(checkForUpdate, 2000);
+  setInterval(checkForUpdate, 5 * 60 * 1000); // re-check every 5 minutes
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') checkForUpdate();
+  });
+});
+
 const CHANGELOG = [
   { version: '1.1.1', notes: [
     'Botão "Limpar tudo" na barra de progresso do separador IRS',
