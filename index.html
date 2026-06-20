@@ -310,7 +310,7 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
         <div class="how-step"><div class="step-num">2</div><div class="step-text">Clica o ícone de <strong>Download</strong> → <strong>CSV</strong></div></div>
       </div>
       <div style="text-align:center;margin-top:18px;padding-bottom:4px">
-        <button id="versionTag" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:11px;font-family:var(--mono);padding:6px 12px;cursor:pointer">v1.1.1 · Notas de versão</button>
+        <button id="versionTag" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:11px;font-family:var(--mono);padding:6px 12px;cursor:pointer">v1.2.0 · Notas de versão</button>
       </div>
     </div>
 
@@ -444,7 +444,7 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
       <div style="padding:16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
         <div>
           <div style="font-size:15px;font-weight:700">IRS Wizard</div>
-          <div id="versionModalSubtitle" style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:1px">Versão 1.1.1</div>
+          <div id="versionModalSubtitle" style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:1px">Versão 1.2.0</div>
         </div>
         <button id="versionCloseBtn" style="background:var(--surface2);border:none;border-radius:8px;width:32px;height:32px;color:var(--text);font-size:16px;cursor:pointer">✕</button>
       </div>
@@ -523,7 +523,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ── Version / changelog ──────────────────────────────────────────────────────
-const APP_VERSION = '1.1.1';
+const APP_VERSION = '1.2.0';
 
 // Check the live deployed file in the background for a newer version.
 // Catches the case where iOS serves a stale cached copy of this page (common
@@ -569,6 +569,11 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 const CHANGELOG = [
+  { version: '1.2.0', notes: [
+    'Cada separador mantém a sua própria posição de scroll ao trocar de menu',
+    'Aviso automático de nova versão disponível, com botão para atualizar',
+    'Bloqueio de cache no navegador para evitar versões antigas em cache',
+  ]},
   { version: '1.1.1', notes: [
     'Botão "Limpar tudo" na barra de progresso do separador IRS',
     'Corrigido: badges de corretora no Resumo agora refletem apenas as corretoras com transações no ano selecionado',
@@ -650,13 +655,26 @@ document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => goTo(btn.dataset.screen));
 });
 
+const screenScrollPositions = {}; // remembers scroll offset per screen
+
 function goTo(screen) {
+  const mainEl = document.getElementById('main');
+  // Save current screen's scroll position before switching away
+  const currentActive = document.querySelector('.screen.active');
+  if (currentActive) {
+    const currentId = currentActive.id.replace('screen-', '');
+    screenScrollPositions[currentId] = mainEl.scrollTop;
+  }
+
   document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.screen === screen));
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + screen).classList.add('active');
-  document.getElementById('main').scrollTo(0, 0);
+
+  // Restore the scroll position this screen had last time, or 0 if never visited
+  mainEl.scrollTo(0, screenScrollPositions[screen] || 0);
+
   const scrollBtn = document.getElementById('scrollTopBtn');
-  if (scrollBtn) scrollBtn.classList.add('hidden');
+  if (scrollBtn) scrollBtn.classList.toggle('hidden', mainEl.scrollTop < 200);
 }
 
 // ── File upload ─────────────────────────────────────────────────────────────
