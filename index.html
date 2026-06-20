@@ -1,6 +1,6 @@
 <!--
   IRS Wizard
-  Versão: 1.2.0
+  Versão: 1.6.0
   Última atualização: 2026-06-20
 
   Para saber se este é o ficheiro mais recente: compara o número de versão
@@ -81,8 +81,9 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
   border-radius: 8px; display: flex; align-items: center;
   justify-content: center; font-weight: 800; font-size: 15px; color: #fff;
 }
-.topbar-text h1 { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
-.topbar-text p { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.topbar-text { min-width: 0; overflow: hidden; }
+.topbar-text h1 { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.topbar-text p { font-size: 11px; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ── Scroll body ── */
 #main {
@@ -275,6 +276,7 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
       <p>Trading 212 · DEGIRO · E*Trade · Portugal</p>
     </div>
     <select id="globalYearSelect" class="hidden" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:8px 10px;font-size:13px;font-weight:600;font-family:var(--sans);margin-right:8px;flex-shrink:0"></select>
+    <button id="faqBtn" aria-label="Perguntas frequentes" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;height:38px;padding:0 12px;display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--text);cursor:pointer;flex-shrink:0;margin-right:8px;white-space:nowrap"><span style="font-size:15px">💡</span>Ajuda</button>
     <button id="themeToggle" aria-label="Alternar tema" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;flex-shrink:0">🌙</button>
   </div>
 
@@ -320,7 +322,7 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
         <div class="how-step"><div class="step-num">2</div><div class="step-text">Clica o ícone de <strong>Download</strong> → <strong>CSV</strong></div></div>
       </div>
       <div style="text-align:center;margin-top:18px;padding-bottom:4px">
-        <button id="versionTag" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:11px;font-family:var(--mono);padding:6px 12px;cursor:pointer">v1.2.0 · Notas de versão</button>
+        <button id="versionTag" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:11px;font-family:var(--mono);padding:6px 12px;cursor:pointer">v1.6.0 · Notas de versão</button>
       </div>
     </div>
 
@@ -345,7 +347,34 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
       </div>
       <div id="fifoContent" class="hidden">
         <div class="section-title">Mais/Menos-valias FIFO</div>
+        <div style="background:rgba(247,201,72,0.08);border:1px solid rgba(247,201,72,0.25);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--text);line-height:1.5">
+          ⚠️ <strong>Atenção:</strong> esta app assume sempre o método FIFO (primeiro a entrar, primeiro a sair). Algumas corretoras — nomeadamente o <strong>E*Trade</strong> para ações de RSU/ESPP — permitem escolher manualmente qual o lote a vender (<em>Specific Identification</em>). Se escolheste um lote diferente do que o FIFO indicaria, os valores aqui podem não corresponder ao que reportaste na corretora. Consulta sempre o teu extrato oficial (1099-B) para confirmar o lote real utilizado.
+        </div>
         <div class="tx-list" id="fifoList"></div>
+      </div>
+    </div>
+
+    <!-- ── SCREEN: Posições em aberto ── -->
+    <div class="screen" id="screen-positions">
+      <div class="empty-state" id="positionsEmpty">
+        <div class="eicon">📦</div>
+        <p>Importa ficheiros para ver as posições em aberto</p>
+      </div>
+      <div id="positionsContent" class="hidden">
+        <div class="section-title">Posições em aberto</div>
+        <div style="background:rgba(79,142,247,0.08);border:1px solid rgba(79,142,247,0.25);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--text);line-height:1.5">
+          ℹ️ Cada lote de compra ainda não vendido aparece separadamente, na ordem em que seria consumido pelo FIFO (mais antigo primeiro). Útil para escolheres manualmente qual lote vender em corretoras como o E*Trade.
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <button class="msel-btn" id="mselPosTickerBtn" data-msel="posTicker">
+            <span class="msel-label" id="mselPosTickerLabel">Todos os tickers</span><span style="color:var(--muted);font-size:11px">▾</span>
+          </button>
+          <button class="msel-btn" id="mselPosBrokerBtn" data-msel="posBroker">
+            <span class="msel-label" id="mselPosBrokerLabel">Todas as corretoras</span><span style="color:var(--muted);font-size:11px">▾</span>
+          </button>
+        </div>
+        <div id="positionsSummaryCards" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px"></div>
+        <div class="tx-list" id="positionsList"></div>
       </div>
     </div>
 
@@ -442,8 +471,8 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
     <button class="nav-item" data-screen="irs">
       <span class="icon">🇵🇹</span>IRS
     </button>
-    <button class="nav-item" data-screen="txns">
-      <span class="icon">📋</span>Transaç.
+    <button class="nav-item" id="moreNavBtn">
+      <span class="icon">⋯</span>Mais
     </button>
   </nav>
 
@@ -454,11 +483,52 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
       <div style="padding:16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
         <div>
           <div style="font-size:15px;font-weight:700">IRS Wizard</div>
-          <div id="versionModalSubtitle" style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:1px">Versão 1.2.0</div>
+          <div id="versionModalSubtitle" style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:1px">Versão 1.6.0</div>
+          <div id="versionModalCopyright" style="font-size:10px;color:var(--muted);margin-top:3px">© 2026 IRS Wizard</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:1px">Feito com ❤️ em Portugal</div>
         </div>
         <button id="versionCloseBtn" style="background:var(--surface2);border:none;border-radius:8px;width:32px;height:32px;color:var(--text);font-size:16px;cursor:pointer">✕</button>
       </div>
       <div style="overflow-y:auto;padding:16px;flex:1" id="versionNotes"></div>
+    </div>
+  </div>
+
+  <!-- FAQ modal -->
+  <div id="faqModal" class="hidden" style="position:fixed;inset:0;z-index:110;display:flex;align-items:flex-end">
+    <div id="faqBackdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.6)"></div>
+    <div style="position:relative;width:100%;background:var(--surface);border-radius:20px 20px 0 0;max-height:85vh;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom,0px)">
+      <div style="padding:16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:15px;font-weight:700">Perguntas frequentes</div>
+        <button id="faqCloseBtn" style="background:var(--surface2);border:none;border-radius:8px;width:32px;height:32px;color:var(--text);font-size:16px;cursor:pointer">✕</button>
+      </div>
+      <div style="overflow-y:auto;padding:12px 16px;flex:1" id="faqList"></div>
+    </div>
+  </div>
+
+  <!-- "Mais" menu sheet -->
+  <div id="moreMenu" class="hidden" style="position:fixed;inset:0;z-index:110;display:flex;align-items:flex-end">
+    <div id="moreMenuBackdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.6)"></div>
+    <div style="position:relative;width:100%;background:var(--surface);border-radius:20px 20px 0 0;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom,0px)">
+      <div style="padding:16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:15px;font-weight:700">Mais</div>
+        <button id="moreMenuCloseBtn" style="background:var(--surface2);border:none;border-radius:8px;width:32px;height:32px;color:var(--text);font-size:16px;cursor:pointer">✕</button>
+      </div>
+      <div style="padding:8px 0 12px">
+        <button class="more-menu-item" data-screen="txns" style="width:100%;background:none;border:none;display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;font-family:var(--sans);text-align:left">
+          <span style="font-size:24px">📋</span>
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--text)">Transações</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:1px">Histórico completo com filtros</div>
+          </div>
+        </button>
+        <button class="more-menu-item" data-screen="positions" style="width:100%;background:none;border:none;display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;font-family:var(--sans);text-align:left">
+          <span style="font-size:24px">📦</span>
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--text)">Posições</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:1px">Lotes de compra ainda em aberto</div>
+          </div>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -534,7 +604,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ── Version / changelog ──────────────────────────────────────────────────────
 // ⚠️ Ao alterar esta versão, atualiza também o comentário no topo do ficheiro (linha 1-9)
-const APP_VERSION = '1.2.0';
+const APP_VERSION = '1.6.0';
 
 // Check the live deployed file in the background for a newer version.
 // Catches the case where iOS serves a stale cached copy of this page (common
@@ -580,6 +650,31 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 const CHANGELOG = [
+  { version: '1.6.0', notes: [
+    'Trademark "© IRS Wizard · Feito com ❤️ em Portugal" adicionada ao fundo do conteúdo de todos os separadores (visível ao fazer scroll até ao fim)',
+  ]},
+  { version: '1.5.2', notes: [
+    'Copyright e "Feito com ❤️ em Portugal" agora sempre visíveis no ecrã Importar, não só dentro das notas de versão',
+  ]},
+  { version: '1.5.1', notes: [
+    'Botão de Ajuda mais visível (ícone + texto, em vez de apenas "?")',
+    'Adicionado copyright e nota "Feito com ❤️ em Portugal" junto à versão',
+    'Pergunta sobre histórico de vendas em anos anteriores tornada genérica (sem anos fixos no texto)',
+  ]},
+  { version: '1.5.0', notes: [
+    'Reorganização da navegação: novo menu "Mais" agrupa Transações e Posições, reduzindo a barra inferior para 5 itens principais',
+    'Filtros de ticker e corretora adicionados ao separador Posições',
+  ]},
+  { version: '1.4.0', notes: [
+    'Nova tab "Posições" — mostra cada lote de compra ainda não vendido, ordenado por FIFO',
+    'Aviso no ecrã FIFO sobre corretoras que permitem Specific Identification (ex: RSU/ESPP no E*Trade)',
+  ]},
+  { version: '1.3.0', notes: [
+    'Nova secção de Perguntas Frequentes (botão "?" no topo) com explicações sobre FIFO, encargos proporcionais, cálculo de impostos e mais',
+  ]},
+  { version: '1.2.1', notes: [
+    'Corrigido: encargos de compra podiam ser contabilizados em duplicado quando o mesmo lote era vendido em mais do que uma transação separada',
+  ]},
   { version: '1.2.0', notes: [
     'Cada separador mantém a sua própria posição de scroll ao trocar de menu',
     'Aviso automático de nova versão disponível, com botão para atualizar',
@@ -614,6 +709,8 @@ const CHANGELOG = [
 function renderVersionNotes() {
   const subtitle = document.getElementById('versionModalSubtitle');
   if (subtitle) subtitle.textContent = `Versão ${APP_VERSION}`;
+  const copyright = document.getElementById('versionModalCopyright');
+  if (copyright) copyright.textContent = `© ${new Date().getFullYear()} IRS Wizard`;
   const tag = document.getElementById('versionTag');
   if (tag) tag.textContent = `v${APP_VERSION} · Notas de versão`;
   const container = document.getElementById('versionNotes');
@@ -627,12 +724,98 @@ function renderVersionNotes() {
   `).join('');
 }
 
+// ── FAQ ───────────────────────────────────────────────────────────────────────
+const FAQ_ITEMS = [
+  { q: 'Como funciona o cálculo FIFO?',
+    a: 'Quando vendes uma posição, a app associa essa venda às compras mais antigas desse título primeiro (First In, First Out). Se compraste em vários momentos diferentes, uma única venda pode "consumir" vários lotes de compra — nesse caso, vês um cartão separado por lote no ecrã FIFO, cada um com a sua própria data de aquisição.' },
+  { q: 'Como são divididos os encargos (comissões) entre vendas?',
+    a: 'Os encargos de uma compra são divididos proporcionalmente entre as vendas que consomem essa compra. Por exemplo: compraste 40 ações com €3,00 de comissão. Se venderes 20 dessas ações, essa venda recebe €1,50 de encargos (20/40 × €3,00). As outras €1,50 ficam associadas às 20 ações restantes — se as venderes mais tarde, numa transação diferente, essa venda futura recebe corretamente o que resta, sem duplicar nem perder valor.' },
+  { q: 'Se já tive vendas em anos anteriores, o cálculo do ano atual tem em conta essas vendas?',
+    a: 'Sim. A app recalcula sempre o histórico completo desde a primeira compra, independentemente do ano selecionado — o seletor de ano apenas filtra quais vendas aparecem no ecrã, não altera o que é processado internamente. Por isso, se já tiveres vendido parte de uma posição em anos anteriores, a app sabe corretamente quantas ações restam nesse lote, e usa o custo de aquisição correto para qualquer venda do ano selecionado.' },
+  { q: 'A app assume sempre FIFO — e se a minha corretora me deixa escolher o lote a vender?',
+    a: 'Esta app assume sempre FIFO (primeiro a entrar, primeiro a sair) em todos os cálculos. No entanto, algumas corretoras — nomeadamente o E*Trade para ações de RSU/ESPP — permitem escolher manualmente qual lote vender através de "Specific Identification". Se escolheste um lote diferente do que o FIFO indicaria, os valores desta app não vão corresponder ao que reportaste na corretora. Usa a tab "Posições" para ver cada lote em aberto (com data e preço de compra) e confirmares qual corresponde ao que realmente vendeste, e consulta sempre o teu extrato oficial (1099-B) para confirmação.' },
+  { q: 'O que mostra a tab "Posições"?',
+    a: 'Mostra cada lote de compra que ainda não foi totalmente vendido, agrupado por ticker e ordenado da data mais antiga para a mais recente — ou seja, na ordem em que o FIFO os consumiria. É útil para acompanhares o que tens em carteira e o custo de cada lote, especialmente se precisares de escolher manualmente qual lote vender numa corretora que o permita.' },
+  { q: 'Por que é que o Campo 901 não inclui os encargos de venda?',
+    a: 'O Campo 901 (Valor de Realização) é sempre o valor bruto da venda — ações × preço de venda. Os encargos de compra e venda aparecem separadamente no Campo 903 (Despesas e Encargos), que é depois subtraído no cálculo do resultado final. Isto segue a estrutura oficial do Anexo J.' },
+  { q: 'Como são calculados os 28% de imposto no Resumo?',
+    a: 'A app aplica a taxa autónoma de 28% separadamente a cada categoria: Categoria G (mais-valias) — 28% × resultado líquido, só se for positivo; Categoria E (dividendos + juros) — 28% × rendimento bruto, menos a retenção já paga no estrangeiro. Estes valores são uma estimativa e não têm em conta outros rendimentos, deduções específicas, ou a opção de englobamento.' },
+  { q: 'Porque é que as menos-valias não compensam os dividendos?',
+    a: 'Em Portugal, a Categoria G (mais/menos-valias) e a Categoria E (dividendos/juros) são tributadas separadamente à taxa autónoma de 28%. Uma perda numa categoria não reduz o imposto devido na outra. A única forma de uma menos-valia "ajudar" é optares pelo englobamento da Categoria G e reportar a perda nos 5 anos seguintes — uma decisão que deves discutir com um contabilista.' },
+  { q: 'Como é decidido se um título é G01 (ação) ou G20 (ETF)?',
+    a: 'A app olha para os primeiros 2 caracteres do ISIN. Códigos IE (Irlanda) e LU (Luxemburgo) são tratados como ETF (G20), com uma pequena lista de exceções conhecidas (ex: Accenture e Pentair, que são ações irlandesas, não ETFs). Todos os outros países são tratados como ações (G01).' },
+  { q: 'Por que aparece Chipre (CY) como país fonte dos juros da Trading 212?',
+    a: 'A Trading 212 está registada em Chipre, por isso os juros sobre o saldo em dinheiro têm essa origem fiscal. Os juros do DEGIRO aparecem com país fonte Países Baixos (NL), onde a flatexDEGIRO Bank está registada.' },
+  { q: 'Os meus dados saem do meu telemóvel?',
+    a: 'Não. Todo o processamento acontece localmente no teu browser — os ficheiros CSV/XLSX nunca são enviados para nenhum servidor. A única ligação à internet usada é para verificar se há uma versão mais recente da app.' },
+  { q: 'O que significa "encargos" no Resumo?',
+    a: 'É a soma de todas as comissões pagas nas compras e vendas do ano selecionado, proporcionalmente distribuídas por lote FIFO. Por exemplo, se compraste 40 ações com €3 de comissão e vendeste só 20, apenas €1,50 dessa comissão é imputada a essa venda.' },
+  { q: 'Os valores no separador IRS são suficientes para preencher a minha declaração?',
+    a: 'Servem como apoio e organização, mas não substituem aconselhamento profissional. Os cálculos assumem a interpretação mais comum das regras fiscais portuguesas para investidores, mas a tua situação pode ter particularidades (residência não habitual, outros rendimentos, etc.) que exigem revisão por um contabilista certificado.' },
+];
+
+function renderFAQ() {
+  const container = document.getElementById('faqList');
+  container.innerHTML = FAQ_ITEMS.map((item, i) => `
+    <div style="border-bottom:1px solid var(--border)">
+      <button class="faq-question" data-idx="${i}" style="width:100%;text-align:left;background:none;border:none;padding:14px 4px;display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;font-family:var(--sans)">
+        <span style="font-size:13.5px;font-weight:600;color:var(--text)">${item.q}</span>
+        <span class="faq-chevron" style="color:var(--muted);font-size:12px;flex-shrink:0;transition:transform 0.2s">▾</span>
+      </button>
+      <div class="faq-answer hidden" style="padding:0 4px 14px;font-size:13px;color:var(--muted);line-height:1.5">${item.a}</div>
+    </div>
+  `).join('');
+
+  container.querySelectorAll('.faq-question').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const answer = btn.parentElement.querySelector('.faq-answer');
+      const chevron = btn.querySelector('.faq-chevron');
+      const isOpen = !answer.classList.contains('hidden');
+      answer.classList.toggle('hidden', isOpen);
+      chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+    });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const faqBtn = document.getElementById('faqBtn');
+  const faqModal = document.getElementById('faqModal');
+  const faqBackdrop = document.getElementById('faqBackdrop');
+  const faqCloseBtn = document.getElementById('faqCloseBtn');
+  if (faqBtn && faqModal) {
+    faqBtn.addEventListener('click', () => {
+      renderFAQ();
+      faqModal.classList.remove('hidden');
+    });
+  }
+  if (faqBackdrop) faqBackdrop.addEventListener('click', () => faqModal.classList.add('hidden'));
+  if (faqCloseBtn) faqCloseBtn.addEventListener('click', () => faqModal.classList.add('hidden'));
+
+  // "Mais" menu
+  const moreNavBtn = document.getElementById('moreNavBtn');
+  const moreMenu = document.getElementById('moreMenu');
+  const moreMenuBackdrop = document.getElementById('moreMenuBackdrop');
+  const moreMenuCloseBtn = document.getElementById('moreMenuCloseBtn');
+  if (moreNavBtn && moreMenu) {
+    moreNavBtn.addEventListener('click', () => moreMenu.classList.remove('hidden'));
+  }
+  if (moreMenuBackdrop) moreMenuBackdrop.addEventListener('click', () => moreMenu.classList.add('hidden'));
+  if (moreMenuCloseBtn) moreMenuCloseBtn.addEventListener('click', () => moreMenu.classList.add('hidden'));
+  document.querySelectorAll('.more-menu-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      moreMenu.classList.add('hidden');
+      goTo(btn.dataset.screen);
+    });
+  });
+});
+
 document.addEventListener('DOMContentLoaded', () => {
   const tag = document.getElementById('versionTag');
   const modal = document.getElementById('versionModal');
   const backdrop = document.getElementById('versionBackdrop');
   const closeBtn = document.getElementById('versionCloseBtn');
   if (tag) tag.textContent = `v${APP_VERSION} · Notas de versão`;
+  injectScreenFooters();
   if (tag && modal) {
     tag.addEventListener('click', () => {
       renderVersionNotes();
@@ -662,11 +845,30 @@ let results = null;
 let checkedItems = {}; // persists checkbox state across re-renders, keyed by stable id
 
 // ── Navigation ─────────────────────────────────────────────────────────────
-document.querySelectorAll('.nav-item').forEach(btn => {
+document.querySelectorAll('.nav-item[data-screen]').forEach(btn => {
   btn.addEventListener('click', () => goTo(btn.dataset.screen));
 });
 
+// Appends a small "© YEAR IRS Wizard · Feito com ❤️ em Portugal" footer at the
+// end of every screen's content, so it's reachable by scrolling to the bottom
+// of whichever tab the user is on, without needing a fixed/always-visible bar.
+function injectScreenFooters() {
+  const year = new Date().getFullYear();
+  document.querySelectorAll('.screen').forEach(screen => {
+    if (screen.querySelector('.screen-footer')) return; // already injected
+    const footer = document.createElement('div');
+    footer.className = 'screen-footer';
+    footer.style.cssText = 'text-align:center; margin-top:28px; padding:12px 0 4px; opacity:0.6;';
+    footer.innerHTML = `
+      <div style="font-size:10px;color:var(--muted)">© ${year} IRS Wizard</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:1px">Feito com ❤️ em Portugal</div>
+    `;
+    screen.appendChild(footer);
+  });
+}
+
 const screenScrollPositions = {}; // remembers scroll offset per screen
+const SCREENS_UNDER_MORE = ['txns', 'positions']; // screens reachable only via the "Mais" menu
 
 function goTo(screen) {
   const mainEl = document.getElementById('main');
@@ -677,7 +879,13 @@ function goTo(screen) {
     screenScrollPositions[currentId] = mainEl.scrollTop;
   }
 
-  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.screen === screen));
+  // For screens under "Mais", highlight the Mais button itself since there's
+  // no dedicated nav-item for them; for everything else, highlight by data-screen.
+  const activeNavTarget = SCREENS_UNDER_MORE.includes(screen) ? null : screen;
+  document.querySelectorAll('.nav-item[data-screen]').forEach(b => b.classList.toggle('active', b.dataset.screen === activeNavTarget));
+  const moreBtn = document.getElementById('moreNavBtn');
+  if (moreBtn) moreBtn.classList.toggle('active', SCREENS_UNDER_MORE.includes(screen));
+
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + screen).classList.add('active');
 
@@ -701,11 +909,13 @@ document.getElementById('fileInput').addEventListener('change', e => {
 
 document.getElementById('clearFiles').addEventListener('click', () => {
   loadedFiles = []; allRows = []; selectedYear = null;
+  mselState.type = []; mselState.broker = []; mselState.ticker = [];
+  mselState.posTicker = []; mselState.posBroker = [];
   document.getElementById('globalYearSelect').classList.add('hidden');
   document.getElementById('globalYearSelect').innerHTML = '';
   renderFileList();
   document.getElementById('controls').classList.add('hidden');
-  ['fifo','dividends','interest','irs','txns'].forEach(id => {
+  ['fifo','dividends','interest','irs','txns','positions'].forEach(id => {
     const e = document.getElementById(id + 'Empty');
     const c = document.getElementById(id + 'Content');
     if (e) e.classList.remove('hidden');
@@ -1184,7 +1394,8 @@ function calculate() {
     if (!queues[row.ticker]) queues[row.ticker] = [];
     const rowYear = row.date.getFullYear();
     if (row.type === 'BUY') {
-      queues[row.ticker].push({ date: row.date, shares: row.shares, price: row.price, charges: row.charges });
+      queues[row.ticker].push({ date: row.date, shares: row.shares, price: row.price, charges: row.charges,
+        broker: row.broker || '', isin: row.isin || '', ticker: row.ticker, name: row.name });
       if (rowYear === year) brokersThisYear.add(row.broker);
     } else if (row.type === 'SELL') {
       const sale = processSale(row, queues[row.ticker]);
@@ -1199,7 +1410,15 @@ function calculate() {
     }
   }
 
-  results = { year, fifoSales, dividends, interests, brokers: [...brokersThisYear].filter(Boolean) };
+  // Open positions = whatever remains in each ticker's queue after all sales consumed their share
+  const openPositions = [];
+  for (const ticker in queues) {
+    for (const lot of queues[ticker]) {
+      if (lot.shares > 0.0000001) openPositions.push(lot);
+    }
+  }
+
+  results = { year, fifoSales, dividends, interests, brokers: [...brokersThisYear].filter(Boolean), openPositions };
   renderAll();
   renderBrokerBadges();
 }
@@ -1216,23 +1435,23 @@ function renderBrokerBadges() {
 
 function processSale(row, queue) {
   let rem = row.shares, totalCost = 0, totalBuyCharges = 0;
-  const lots = [], tempQ = queue.map(l => ({...l}));
-  while (rem > 0 && tempQ.length > 0) {
-    const lot = tempQ[0];
+  const lots = [];
+  // Single pass: consume directly from the real queue, computing each lot's
+  // proportional share of cost/charges as we go, and shrinking the lot's
+  // remaining charges (not just shares) so any LATER sale that further
+  // depletes this same lot still computes an accurate proportion.
+  while (rem > 0 && queue.length > 0) {
+    const lot = queue[0];
     const used = Math.min(lot.shares, rem);
-    const ratio = used / lot.shares; // proportion of this lot used
+    const ratio = used / lot.shares; // proportion of this lot's CURRENT remainder
     const lotCharges = (lot.charges || 0) * ratio;
     totalCost += used * lot.price + lotCharges;
     totalBuyCharges += lotCharges;
     lots.push({ date: lot.date, shares: used, price: lot.price, charges: lotCharges });
-    lot.shares -= used; rem -= used;
-    if (lot.shares <= 0) tempQ.shift();
-  }
-  let rem2 = row.shares;
-  while (rem2 > 0 && queue.length > 0) {
-    const used = Math.min(queue[0].shares, rem2);
-    queue[0].shares -= used; rem2 -= used;
-    if (queue[0].shares <= 0) queue.shift();
+    lot.shares -= used;
+    lot.charges = (lot.charges || 0) - lotCharges; // shrink remaining charges too
+    rem -= used;
+    if (lot.shares <= 0) queue.shift();
   }
   const sellCharges = row.charges || 0;
   const revenue = row.shares * row.price; // 901 gross
@@ -1258,7 +1477,7 @@ const TYPE_COLOR   = { BUY:'var(--gain)', SELL:'var(--loss)', DIVIDEND:'var(--di
 const TYPE_ICON    = { BUY:'↑', SELL:'↓', DIVIDEND:'$', INTEREST:'%' };
 
 // Multi-select filter state: empty array = "all" (no filtering on that dimension)
-const mselState = { type: [], broker: [], ticker: [] };
+const mselState = { type: [], broker: [], ticker: [], posTicker: [], posBroker: [] };
 let mselDraft = []; // working selection while the sheet is open, applied on "Aplicar"
 
 const MSEL_TYPE_OPTIONS = [
@@ -1277,19 +1496,30 @@ function mselTickerOptions() {
   return [...new Set(allRows.map(r => r.ticker).filter(Boolean))].sort().map(t => ({ value: t, label: t }));
 }
 
+function mselPosTickerOptions() {
+  const positions = (results && results.openPositions) || [];
+  return [...new Set(positions.map(l => l.ticker).filter(Boolean))].sort().map(t => ({ value: t, label: t }));
+}
+
 function mselOptionsFor(kind) {
   if (kind === 'type') return MSEL_TYPE_OPTIONS;
   if (kind === 'broker') return MSEL_BROKER_OPTIONS;
   if (kind === 'ticker') return mselTickerOptions();
+  if (kind === 'posTicker') return mselPosTickerOptions();
+  if (kind === 'posBroker') return MSEL_BROKER_OPTIONS;
   return [];
 }
 
 function mselTitleFor(kind) {
-  return kind === 'type' ? 'Tipo de transação' : kind === 'broker' ? 'Corretora' : 'Ticker';
+  if (kind === 'type') return 'Tipo de transação';
+  if (kind === 'broker' || kind === 'posBroker') return 'Corretora';
+  return 'Ticker';
 }
 
 function mselAllLabel(kind) {
-  return kind === 'type' ? 'Todos os tipos' : kind === 'broker' ? 'Todas as corretoras' : 'Todos os tickers';
+  if (kind === 'type') return 'Todos os tipos';
+  if (kind === 'broker' || kind === 'posBroker') return 'Todas as corretoras';
+  return 'Todos os tickers';
 }
 
 function updateMselButtonLabel(kind) {
@@ -1373,7 +1603,8 @@ document.addEventListener('DOMContentLoaded', () => {
     mselState[kind] = [...mselDraft];
     updateMselButtonLabel(kind);
     closeMselSheet();
-    renderTxns();
+    if (kind === 'posTicker' || kind === 'posBroker') renderPositions();
+    else renderTxns();
   });
   const clearAllBtn = document.getElementById('clearAllFiltersBtn');
   if (clearAllBtn) {
@@ -1549,6 +1780,7 @@ function exportTxnCSV() {
 function renderAll() {
   renderSummary();
   renderFIFO();
+  renderPositions();
   renderIncome();
   renderIRS();
   renderTxns();
@@ -1692,6 +1924,114 @@ function renderFIFO() {
   }
   list.innerHTML = cards;
 }
+
+function renderPositions() {
+  const { openPositions } = results;
+  document.getElementById('positionsEmpty').classList.add('hidden');
+  document.getElementById('positionsContent').classList.remove('hidden');
+
+  updateMselButtonLabel('posTicker');
+  updateMselButtonLabel('posBroker');
+
+  const list = document.getElementById('positionsList');
+  const summaryCards = document.getElementById('positionsSummaryCards');
+
+  let filtered = [...(openPositions || [])];
+  if (mselState.posTicker.length) filtered = filtered.filter(l => mselState.posTicker.includes(l.ticker));
+  if (mselState.posBroker.length) filtered = filtered.filter(l => mselState.posBroker.includes(l.broker));
+
+  if (!filtered.length) {
+    list.innerHTML = `<div style="text-align:center;padding:30px;color:var(--muted)">${(openPositions||[]).length ? 'Nenhuma posição corresponde aos filtros' : 'Nenhuma posição em aberto'}</div>`;
+    summaryCards.innerHTML = '';
+    return;
+  }
+
+  // Sort by ticker, then by date (oldest first = FIFO consumption order)
+  const sorted = [...filtered].sort((a, b) => {
+    if (a.ticker < b.ticker) return -1;
+    if (a.ticker > b.ticker) return 1;
+    return a.date - b.date;
+  });
+
+  // Summary: distinct tickers, total invested (cost basis), total shares value at cost
+  const distinctTickers = new Set(sorted.map(l => l.ticker)).size;
+  const totalInvested = sorted.reduce((s, l) => s + l.shares * l.price + (l.charges || 0), 0);
+  const totalLots = sorted.length;
+
+  summaryCards.innerHTML = `
+    <div class="scard">
+      <div class="slabel">Títulos em carteira</div>
+      <div class="svalue" style="color:var(--text)">${distinctTickers}</div>
+      <div class="ssub">${totalLots} lotes em aberto</div>
+    </div>
+    <div class="scard">
+      <div class="slabel">Valor investido (custo)</div>
+      <div class="svalue" style="color:var(--text)">${fmtEur(totalInvested)}</div>
+      <div class="ssub">Inclui encargos de compra</div>
+    </div>
+  `;
+
+  let lastTicker = null;
+  let html = '';
+
+  // Precompute lot counts per ticker for "lote N/M" labels
+  const countsByTicker = {};
+  sorted.forEach(l => { countsByTicker[l.ticker] = (countsByTicker[l.ticker] || 0) + 1; });
+  const seenSoFar = {};
+
+  for (const lot of sorted) {
+    const ticker = lot.ticker || '—';
+    const lotName = lot.name && lot.name !== ticker ? lot.name : '';
+
+    if (ticker !== lastTicker) {
+      if (lastTicker !== null) html += '<div style="height:8px"></div>';
+      html += `<div style="padding:4px 2px;margin-top:2px">
+        <div style="font-size:12px;font-weight:700;color:var(--text)">${ticker}${lot.isin ? ` <span style="font-size:10px;color:var(--muted);font-weight:400">${lot.isin}</span>` : ''}</div>
+        ${lotName ? `<div style="font-size:11px;color:var(--muted);margin-top:1px">${lotName}</div>` : ''}
+      </div>`;
+      lastTicker = ticker;
+    }
+
+    seenSoFar[ticker] = (seenSoFar[ticker] || 0) + 1;
+    const totalForThisTicker = countsByTicker[ticker];
+    const lotLabel = totalForThisTicker > 1 ? `Lote ${seenSoFar[ticker]}/${totalForThisTicker}` : 'Lote único';
+    const broker = BROKER_LABEL[lot.broker] || lot.broker || '—';
+    const brokerColor = BROKER_COLOR[lot.broker] || 'var(--muted)';
+    const costBasis = lot.shares * lot.price + (lot.charges || 0);
+
+    html += `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+          <span style="font-size:12px;font-weight:600;color:var(--muted)">${lotLabel}</span>
+          <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;background:${brokerColor}22;color:${brokerColor}">${broker}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-size:13px;color:var(--muted)">Data de aquisição</span>
+          <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text)">${fmtDate(lot.date)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-size:13px;color:var(--muted)">Quantidade</span>
+          <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text)">${fmt(lot.shares, 4)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-size:13px;color:var(--muted)">Preço de compra</span>
+          <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text)">${fmtEur(lot.price)}</span>
+        </div>
+        ${(lot.charges || 0) > 0 ? `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-size:13px;color:var(--muted)">Encargos não realizados</span>
+          <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--loss)">${fmtEur(lot.charges)}</span>
+        </div>` : ''}
+        <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);margin-top:6px;padding-top:8px">
+          <span style="font-size:13px;font-weight:600;color:var(--text)">Custo total do lote</span>
+          <span style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--text)">${fmtEur(costBasis)}</span>
+        </div>
+      </div>`;
+  }
+
+  list.innerHTML = html;
+}
+
 function renderIncome() {
   const { dividends, interests } = results;
   document.getElementById('incomeEmpty').classList.add('hidden');
