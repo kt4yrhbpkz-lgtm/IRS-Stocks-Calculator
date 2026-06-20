@@ -434,6 +434,10 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
         <span id="mselSheetTitle" style="font-size:15px;font-weight:700">Filtrar</span>
         <button id="mselClearBtn" style="background:none;border:none;color:var(--accent);font-size:13px;font-weight:600;font-family:var(--sans)">Limpar</button>
       </div>
+      <div style="padding:10px 16px;border-bottom:1px solid var(--border)">
+        <input type="text" id="mselSearchInput" placeholder="Pesquisar..." autocomplete="off" autocorrect="off" autocapitalize="off"
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:9px 12px;font-size:14px;font-family:var(--sans);outline:none">
+      </div>
       <div id="mselSheetOptions" style="overflow-y:auto;padding:8px 0;flex:1"></div>
       <div style="padding:14px 16px;border-top:1px solid var(--border)">
         <button id="mselApplyBtn" class="btn" style="width:100%;text-align:center">Aplicar</button>
@@ -448,8 +452,7 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
 (function initTheme() {
   let saved = null;
   try { saved = sessionStorage.getItem('t212_theme'); } catch(_) {}
-  const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
-  const theme = saved || (prefersLight ? 'light' : 'dark');
+  const theme = saved || 'dark'; // dark mode is the default, regardless of system preference
   applyTheme(theme);
 })();
 
@@ -1106,8 +1109,13 @@ function updateMselButtonLabel(kind) {
   }
 }
 
+let mselSearchQuery = '';
+
 function openMselSheet(kind) {
   mselDraft = [...mselState[kind]];
+  mselSearchQuery = '';
+  const searchInput = document.getElementById('mselSearchInput');
+  if (searchInput) searchInput.value = '';
   document.getElementById('mselSheet').dataset.kind = kind;
   document.getElementById('mselSheetTitle').textContent = mselTitleFor(kind);
   renderMselOptions(kind);
@@ -1115,10 +1123,16 @@ function openMselSheet(kind) {
 }
 
 function renderMselOptions(kind) {
-  const opts = mselOptionsFor(kind);
+  const allOpts = mselOptionsFor(kind);
+  const q = mselSearchQuery.trim().toLowerCase();
+  const opts = q ? allOpts.filter(o => o.label.toLowerCase().includes(q) || o.value.toLowerCase().includes(q)) : allOpts;
   const container = document.getElementById('mselSheetOptions');
-  if (!opts.length) {
+  if (!allOpts.length) {
     container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">Sem opções disponíveis</div>';
+    return;
+  }
+  if (!opts.length) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">Nenhum resultado para "' + mselSearchQuery + '"</div>';
     return;
   }
   container.innerHTML = opts.map(o => {
@@ -1147,6 +1161,11 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', () => openMselSheet(btn.dataset.msel));
   });
   document.getElementById('mselBackdrop').addEventListener('click', closeMselSheet);
+  document.getElementById('mselSearchInput').addEventListener('input', e => {
+    mselSearchQuery = e.target.value;
+    const kind = document.getElementById('mselSheet').dataset.kind;
+    renderMselOptions(kind);
+  });
   document.getElementById('mselClearBtn').addEventListener('click', () => {
     mselDraft = [];
     const kind = document.getElementById('mselSheet').dataset.kind;
