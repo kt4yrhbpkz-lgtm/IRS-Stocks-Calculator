@@ -1,6 +1,6 @@
 <!--
   IRS Wizard
-  Versão: 1.6.0
+  Versão: 1.7.0
   Última atualização: 2026-06-20
 
   Para saber se este é o ficheiro mais recente: compara o número de versão
@@ -292,6 +292,9 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
         <h2>Importar ficheiros</h2>
         <p>Toca para adicionar ficheiros do Trading 212, DEGIRO ou E*Trade — podes selecionar vários ao mesmo tempo</p>
       </div>
+      <div style="background:rgba(247,201,72,0.08);border:1px solid rgba(247,201,72,0.25);border-radius:12px;padding:12px 14px;margin-top:12px;font-size:12px;color:var(--text);line-height:1.5">
+        ⚠️ <strong>Importa sempre o histórico completo</strong>, desde a tua primeira transação em cada corretora. O cálculo FIFO precisa de conhecer todas as compras de um título para calcular corretamente o custo de aquisição de cada venda. Um histórico parcial pode gerar valores incorretos.
+      </div>
       <div id="fileList" class="hidden" style="margin-top:12px;display:flex;flex-direction:column;gap:8px"></div>
       <button id="clearFiles" class="hidden btn-sm" style="margin-top:10px;width:100%;text-align:center;color:var(--loss);border-color:rgba(242,95,92,0.3)">🗑 Remover todos os ficheiros</button>
 
@@ -322,7 +325,7 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
         <div class="how-step"><div class="step-num">2</div><div class="step-text">Clica o ícone de <strong>Download</strong> → <strong>CSV</strong></div></div>
       </div>
       <div style="text-align:center;margin-top:18px;padding-bottom:4px">
-        <button id="versionTag" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:11px;font-family:var(--mono);padding:6px 12px;cursor:pointer">v1.6.0 · Notas de versão</button>
+        <button id="versionTag" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:11px;font-family:var(--mono);padding:6px 12px;cursor:pointer">v1.7.0 · Notas de versão</button>
       </div>
     </div>
 
@@ -333,6 +336,7 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
         <p>Importa um ficheiro CSV para ver o resumo</p>
       </div>
       <div id="summaryContent" class="hidden">
+        <div id="incompleteHistoryWarning"></div>
         <div class="section-title">Resumo do ano <span id="brokerBadge" style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(79,142,247,0.15);color:var(--accent);font-weight:600;margin-left:6px;text-transform:none;letter-spacing:0"></span></div>
         <div class="cards-grid" id="cardsGrid" style="grid-template-columns:1fr 1fr"></div>
         <div id="taxBreakdown"></div>
@@ -483,7 +487,7 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
       <div style="padding:16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
         <div>
           <div style="font-size:15px;font-weight:700">IRS Wizard</div>
-          <div id="versionModalSubtitle" style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:1px">Versão 1.6.0</div>
+          <div id="versionModalSubtitle" style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:1px">Versão 1.7.0</div>
           <div id="versionModalCopyright" style="font-size:10px;color:var(--muted);margin-top:3px">© 2026 IRS Wizard</div>
           <div style="font-size:10px;color:var(--muted);margin-top:1px">Feito com ❤️ em Portugal</div>
         </div>
@@ -604,7 +608,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ── Version / changelog ──────────────────────────────────────────────────────
 // ⚠️ Ao alterar esta versão, atualiza também o comentário no topo do ficheiro (linha 1-9)
-const APP_VERSION = '1.6.0';
+const APP_VERSION = '1.7.0';
 
 // Check the live deployed file in the background for a newer version.
 // Catches the case where iOS serves a stale cached copy of this page (common
@@ -650,6 +654,20 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 const CHANGELOG = [
+  { version: '1.7.0', notes: [
+    'Deteção automática de histórico de compras incompleto: a app avisa no Resumo quando encontra vendas sem compras suficientes registadas',
+    'Novo disclaimer no ecrã Importar e no FAQ sobre a importância de importar o histórico completo de transações',
+  ]},
+  { version: '1.6.3', notes: [
+    'Nova pergunta no FAQ sobre quais as corretoras suportadas, com indicação para contactar o administrador para pedir novas integrações',
+  ]},
+  { version: '1.6.2', notes: [
+    'Corrigido bug silencioso: o botão "Remover todos os ficheiros" tentava aceder a elementos antigos e inexistentes, interrompendo a execução sem aviso visível',
+    'Auditoria de código: confirmada ausência de funções/CSS não utilizados em toda a aplicação',
+  ]},
+  { version: '1.6.1', notes: [
+    'Corrigido texto ambíguo no painel de importação: agora diz claramente "Nenhum duplicado encontrado" quando esse é o caso, em vez de sugerir sempre que houve remoção',
+  ]},
   { version: '1.6.0', notes: [
     'Trademark "© IRS Wizard · Feito com ❤️ em Portugal" adicionada ao fundo do conteúdo de todos os separadores (visível ao fazer scroll até ao fim)',
   ]},
@@ -726,6 +744,10 @@ function renderVersionNotes() {
 
 // ── FAQ ───────────────────────────────────────────────────────────────────────
 const FAQ_ITEMS = [
+  { q: 'Que corretoras são suportadas por esta app?',
+    a: 'Esta app suporta atualmente Trading 212, DEGIRO e E*Trade. Se usas uma corretora diferente que gostarias de ver suportada, contacta o administrador da app para pedir a adição.' },
+  { q: 'Tenho de importar todo o histórico de transações?',
+    a: 'Sim, é essencial. O cálculo FIFO depende de conhecer todas as compras de um título para determinar corretamente o custo de aquisição de cada venda. Se importares apenas um período parcial (por exemplo, só os últimos 12 meses) e tiveres vendido ações compradas antes desse período, a app não vai encontrar essas compras e o cálculo da mais-valia ficará incorreto. Exporta sempre o histórico completo desde a tua primeira transação em cada corretora. A app deteta automaticamente este problema e mostra um aviso no Resumo quando encontra vendas sem compras suficientes associadas.' },
   { q: 'Como funciona o cálculo FIFO?',
     a: 'Quando vendes uma posição, a app associa essa venda às compras mais antigas desse título primeiro (First In, First Out). Se compraste em vários momentos diferentes, uma única venda pode "consumir" vários lotes de compra — nesse caso, vês um cartão separado por lote no ecrã FIFO, cada um com a sua própria data de aquisição.' },
   { q: 'Como são divididos os encargos (comissões) entre vendas?',
@@ -925,8 +947,6 @@ document.getElementById('clearFiles').addEventListener('click', () => {
   document.getElementById('irsContent').classList.add('hidden');
   document.getElementById('summaryEmpty').classList.remove('hidden');
   document.getElementById('summaryContent').classList.add('hidden');
-  document.getElementById('summary').classList.add('hidden');
-  document.getElementById('tabs').classList.add('hidden');
 });
 
 function loadFilesSequentially(files, idx) {
@@ -974,8 +994,12 @@ function mergeAndCalculate() {
     const brokerNames = { T212: 'Trading 212', DEGIRO: 'DEGIRO', ETRADE: 'E*Trade' };
     let msg = `<b>Ficheiros: ${loadedFiles.length}</b><br>`;
     loadedFiles.forEach(f => { msg += `• ${f.name} → ${brokerNames[f.broker]||f.broker} · ${f.rows.length} transações<br>`; });
-    msg += `<b>Total após remoção de duplicados: ${allRows.length} transações</b>`;
-    if (dupCount > 0) msg += `<br><span style="color:var(--loss)">⚠️ ${dupCount} transações duplicadas detetadas e removidas (provavelmente ficheiros com datas sobrepostas)</span>`;
+    msg += `<b>Total de transações: ${allRows.length}</b>`;
+    if (dupCount > 0) {
+      msg += `<br><span style="color:var(--loss)">⚠️ ${dupCount} transações duplicadas detetadas e removidas (provavelmente ficheiros com datas sobrepostas)</span>`;
+    } else {
+      msg += `<br><span style="color:var(--gain)">✓ Nenhum duplicado encontrado</span>`;
+    }
     dbg.innerHTML = msg; dbg.style.display = 'block';
   }
   if (dupCount > 0) {
@@ -1389,6 +1413,7 @@ function calculate() {
   const queues = {};
   const fifoSales = [], dividends = [], interests = [];
   const brokersThisYear = new Set();
+  const incompleteHistoryWarnings = []; // sales where the FIFO queue ran out of buy lots
 
   for (const row of sorted) {
     if (!queues[row.ticker]) queues[row.ticker] = [];
@@ -1400,6 +1425,10 @@ function calculate() {
     } else if (row.type === 'SELL') {
       const sale = processSale(row, queues[row.ticker]);
       sale.isin = row.isin || '';
+      if (sale.unmatchedShares > 0) {
+        incompleteHistoryWarnings.push({ ticker: row.ticker, name: row.name, date: row.date,
+          unmatchedShares: sale.unmatchedShares, totalShares: row.shares, broker: row.broker || '' });
+      }
       if (rowYear === year) { fifoSales.push(sale); brokersThisYear.add(row.broker); }
     } else if (row.type === 'DIVIDEND' && rowYear === year) {
       dividends.push({ date: row.date, ticker: row.ticker, name: row.name, gross: row.total, withholding: row.withholding, isin: row.isin || '' });
@@ -1418,7 +1447,7 @@ function calculate() {
     }
   }
 
-  results = { year, fifoSales, dividends, interests, brokers: [...brokersThisYear].filter(Boolean), openPositions };
+  results = { year, fifoSales, dividends, interests, brokers: [...brokersThisYear].filter(Boolean), openPositions, incompleteHistoryWarnings };
   renderAll();
   renderBrokerBadges();
 }
@@ -1453,12 +1482,16 @@ function processSale(row, queue) {
     rem -= used;
     if (lot.shares <= 0) queue.shift();
   }
+  // If rem > 0 here, the queue ran out before the sale was fully matched —
+  // this means there isn't enough buy history for this ticker, which usually
+  // happens when the imported files don't cover the full transaction history.
+  const unmatchedShares = rem > 0.0000001 ? rem : 0;
   const sellCharges = row.charges || 0;
   const revenue = row.shares * row.price; // 901 gross
   const gainLoss = revenue - totalCost;
   return { date: row.date, ticker: row.ticker, name: row.name, shares: row.shares, sellPrice: row.price,
     sellCharges, buyCharges: totalBuyCharges, totalCharges: totalBuyCharges + sellCharges,
-    revenue, cost: totalCost, gainLoss, lots, broker: row.broker || '' };
+    revenue, cost: totalCost, gainLoss, lots, broker: row.broker || '', unmatchedShares };
 }
 
 // ── Format helpers ──────────────────────────────────────────────────────────
@@ -1787,7 +1820,7 @@ function renderAll() {
 }
 
 function renderSummary() {
-  const { fifoSales, dividends, interests } = results;
+  const { fifoSales, dividends, interests, incompleteHistoryWarnings } = results;
   const gain = fifoSales.reduce((s,r) => s + (r.gainLoss > 0 ? r.gainLoss : 0), 0);
   const loss = fifoSales.reduce((s,r) => s + (r.gainLoss < 0 ? r.gainLoss : 0), 0);
   const net = gain + loss;
@@ -1798,6 +1831,28 @@ function renderSummary() {
 
   document.getElementById('summaryEmpty').classList.add('hidden');
   document.getElementById('summaryContent').classList.remove('hidden');
+
+  // Warn if the FIFO engine ran out of buy history for any sale — this usually
+  // means the imported files don't cover the full transaction history.
+  const warningEl = document.getElementById('incompleteHistoryWarning');
+  if (warningEl) {
+    if (incompleteHistoryWarnings && incompleteHistoryWarnings.length) {
+      const items = incompleteHistoryWarnings.map(w => `
+        <div style="font-size:12px;color:var(--text);padding:6px 0;border-top:1px solid rgba(242,95,92,0.2)">
+          <strong>${w.ticker}</strong>${w.name && w.name !== w.ticker ? ' — ' + w.name : ''} ·
+          venda de ${fmtDate(w.date)}: faltam <strong>${fmt(w.unmatchedShares, 4)}</strong> de ${fmt(w.totalShares, 4)} ações no histórico de compras
+          ${w.broker ? ` (${BROKER_LABEL[w.broker] || w.broker})` : ''}
+        </div>`).join('');
+      warningEl.innerHTML = `
+        <div style="background:rgba(242,95,92,0.1);border:1px solid rgba(242,95,92,0.35);border-radius:12px;padding:14px;margin-bottom:16px">
+          <div style="font-size:13px;font-weight:700;color:var(--loss);margin-bottom:4px">⚠️ Histórico de compras incompleto</div>
+          <div style="font-size:12px;color:var(--text);line-height:1.5">Foram detetadas vendas para as quais não existem compras suficientes nos ficheiros importados. Isto normalmente significa que falta importar parte do histórico (ex: compras feitas antes do período exportado). Os valores de custo de aquisição para estas vendas estão <strong>incorretos</strong> até importares o histórico completo.</div>
+          <div style="margin-top:8px">${items}</div>
+        </div>`;
+    } else {
+      warningEl.innerHTML = '';
+    }
+  }
 
   // Tax estimates at 28% autonomous rate
   const taxG    = Math.max(0, net * 0.28);               // Cat G: 28% on net gain (0 if loss)
