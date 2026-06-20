@@ -1,0 +1,1820 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="IRS T212"/>
+<meta name="theme-color" content="#0f1117"/>
+<title>IRS T212</title>
+<style>
+:root {
+  --bg: #0f1117;
+  --surface: #181c27;
+  --surface2: #1f2436;
+  --border: #2a3050;
+  --accent: #4f8ef7;
+  --accent2: #7c5af5;
+  --gain: #2dd4a0;
+  --loss: #f25f5c;
+  --dividend: #f7c948;
+  --interest: #a78bfa;
+  --text: #e8ecf4;
+  --muted: #7a85a0;
+  --bg-rgb: 15,17,23;
+  --surface-rgb: 24,28,39;
+  --mono: 'Menlo', 'Courier New', monospace;
+  --sans: -apple-system, 'SF Pro Text', system-ui, sans-serif;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --nav-h: 58px;
+}
+[data-theme="light"] {
+  --bg: #f5f6f9;
+  --surface: #ffffff;
+  --surface2: #eef0f5;
+  --border: #dde1ea;
+  --accent: #3b6fe0;
+  --accent2: #6c4fd6;
+  --gain: #1ea672;
+  --loss: #d6473f;
+  --dividend: #b8860b;
+  --interest: #7c5fd1;
+  --text: #1a1d29;
+  --muted: #6b7280;
+  --bg-rgb: 245,246,249;
+  --surface-rgb: 255,255,255;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); overscroll-behavior: none; overflow-x: hidden; max-width: 100vw; transition: background 0.2s, color 0.2s; }
+
+/* ── Layout ── */
+#app { display: flex; flex-direction: column; height: 100%; }
+
+/* ── Header ── */
+.topbar {
+  padding: calc(var(--safe-top) + 14px) 18px 14px;
+  background: rgba(var(--bg-rgb),0.92);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+  position: sticky; top: 0; z-index: 10;
+}
+.logo {
+  width: 34px; height: 34px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 8px; display: flex; align-items: center;
+  justify-content: center; font-weight: 800; font-size: 15px; color: #fff;
+}
+.topbar-text h1 { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
+.topbar-text p { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+/* ── Scroll body ── */
+#main {
+  flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(var(--nav-h) + var(--safe-bottom) + 16px);
+}
+
+/* ── Bottom nav ── */
+.bottomnav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: calc(var(--nav-h) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  background: rgba(var(--surface-rgb),0.96);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-top: 1px solid var(--border);
+  display: flex; align-items: stretch; z-index: 10;
+  overflow: hidden;
+}
+.nav-item {
+  flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 2px; cursor: pointer;
+  color: var(--muted); font-size: 9px; font-weight: 500;
+  transition: color 0.15s; padding-top: 4px; padding-left: 2px; padding-right: 2px;
+  border: none; background: none; font-family: var(--sans);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.nav-item .icon { font-size: 19px; line-height: 1; }
+.nav-item.active { color: var(--accent); }
+
+/* ── Screens ── */
+.screen { display: none; padding: 16px; box-sizing: border-box; }
+.screen.active { display: block; }
+
+/* ── Upload screen ── */
+.upload-card {
+  background: var(--surface); border: 2px dashed var(--border);
+  border-radius: 20px; padding: 36px 24px; text-align: center;
+  position: relative; margin-bottom: 16px;
+}
+.upload-card input {
+  position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer;
+}
+.upload-card .uicon { font-size: 44px; margin-bottom: 12px; }
+.upload-card h2 { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+.upload-card p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+.how-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 16px 18px;
+}
+.how-card h3 { font-size: 13px; font-weight: 700; margin-bottom: 10px; color: var(--accent); }
+.how-step {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 8px 0; border-bottom: 1px solid var(--border);
+}
+.how-step:last-child { border-bottom: none; }
+.step-num {
+  width: 22px; height: 22px; border-radius: 50%; background: var(--accent);
+  color: #fff; font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+}
+.step-text { font-size: 13px; color: var(--muted); line-height: 1.4; }
+.step-text strong { color: var(--text); }
+
+.year-bar {
+  display: flex; gap: 10px; align-items: flex-end;
+  margin: 14px 0 4px; flex-wrap: wrap;
+}
+.year-bar label { font-size: 12px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+.year-bar select {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text); padding: 10px 14px;
+  font-size: 15px; font-family: var(--sans); outline: none; appearance: none;
+  -webkit-appearance: none; min-width: 120px;
+}
+.btn {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff; border: none; border-radius: 12px;
+  padding: 11px 22px; font-size: 15px; font-weight: 600;
+  cursor: pointer; font-family: var(--sans);
+}
+.btn-sm {
+  background: var(--surface2); color: var(--text);
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: 9px 16px; font-size: 13px; font-weight: 500;
+  cursor: pointer; font-family: var(--sans);
+}
+
+.error-msg {
+  background: rgba(242,95,92,0.1); border: 1px solid rgba(242,95,92,0.3);
+  color: var(--loss); border-radius: 12px; padding: 12px 16px;
+  margin: 12px 0; font-size: 13px;
+}
+.hidden { display: none !important; }
+
+/* ── Summary cards ── */
+.cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 4px; }
+.scard {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 14px 16px;
+}
+.scard .slabel { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 5px; }
+.scard .svalue { font-size: 19px; font-weight: 700; font-family: var(--mono); letter-spacing: -0.5px; }
+.scard .ssub { font-size: 10px; color: var(--muted); margin-top: 3px; }
+.gain { color: var(--gain); }
+.loss { color: var(--loss); }
+.divcolor { color: var(--dividend); }
+.intcolor { color: var(--interest); }
+
+/* ── Section title ── */
+.section-title { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin: 20px 0 10px; }
+
+/* ── Transaction rows ── */
+.tx-list { display: flex; flex-direction: column; gap: 8px; }
+.tx-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 13px 15px;
+}
+.tx-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+.tx-ticker { font-size: 15px; font-weight: 700; }
+.tx-amount { font-size: 15px; font-weight: 700; font-family: var(--mono); }
+.tx-bottom { display: flex; justify-content: space-between; align-items: center; }
+.tx-meta { font-size: 12px; color: var(--muted); }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+.badge-buy { background: rgba(45,212,160,0.12); color: var(--gain); }
+.badge-sell { background: rgba(242,95,92,0.12); color: var(--loss); }
+.badge-div { background: rgba(247,201,72,0.12); color: var(--dividend); }
+.badge-int { background: rgba(167,139,250,0.12); color: var(--interest); }
+
+/* ── FIFO detail card ── */
+.fifo-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 14px 16px; margin-bottom: 8px;
+}
+.fifo-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.fifo-ticker { font-size: 16px; font-weight: 700; }
+.fifo-gl { font-size: 16px; font-weight: 700; font-family: var(--mono); }
+.fifo-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--border); }
+.fifo-row:last-of-type { border-bottom: none; }
+.fifo-row .fk { font-size: 12px; color: var(--muted); }
+.fifo-row .fv { font-size: 12px; font-family: var(--mono); }
+.fifo-lots { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); line-height: 1.6; }
+
+/* ── IRS screen ── */
+.irs-block {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 16px; margin-bottom: 12px;
+}
+.irs-block-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+.irs-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 9px 0; border-bottom: 1px solid var(--border); gap: 8px; }
+.irs-row:last-child { border-bottom: none; }
+.irs-row .ik { font-size: 12px; color: var(--muted); flex: 1 1 auto; min-width: 0; padding-right: 4px; line-height: 1.4; }
+.irs-row .iv { font-family: var(--mono); font-size: 13px; font-weight: 600; white-space: normal; text-align: right; flex-shrink: 0; max-width: 60%; overflow-wrap: break-word; }
+.irs-note { background: var(--surface2); border-radius: 10px; padding: 12px 14px; font-size: 11.5px; color: var(--muted); line-height: 1.6; margin-top: 12px; }
+.irs-note strong { color: var(--text); }
+.irs-check-row { display:flex; align-items:flex-start; gap:10px; padding:10px 12px; background:var(--surface2); border-radius:10px; margin-bottom:8px; cursor:pointer; transition:opacity 0.15s; }
+.irs-check-row.checked { opacity: 0.45; }
+.irs-checkbox { width:22px; height:22px; border-radius:6px; border:2px solid var(--border); flex-shrink:0; margin-top:2px; display:flex; align-items:center; justify-content:center; transition:all 0.15s; background:var(--surface); }
+.irs-checkbox.checked { background:var(--accent); border-color:var(--accent); }
+.irs-checkbox svg { width:14px; height:14px; opacity:0; transition:opacity 0.15s; }
+.irs-checkbox.checked svg { opacity:1; }
+.irs-card-body { flex:1; min-width:0; }
+
+/* ── Multi-select bottom sheet ── */
+.msel-option { display:flex; align-items:center; gap:12px; padding:12px 16px; cursor:pointer; }
+.msel-option:active { background:var(--surface2); }
+.msel-check { width:20px; height:20px; border-radius:5px; border:2px solid var(--border); flex-shrink:0; display:flex; align-items:center; justify-content:center; background:var(--surface); transition:all 0.15s; }
+.msel-check.checked { background:var(--accent); border-color:var(--accent); }
+.msel-check svg { width:13px; height:13px; opacity:0; transition:opacity 0.15s; }
+.msel-check.checked svg { opacity:1; }
+.msel-option-label { font-size:14px; color:var(--text); flex:1; }
+.msel-btn .msel-label { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+.export-row { display: flex; gap: 10px; margin-top: 16px; }
+.export-row .btn-sm { flex: 1; text-align: center; }
+
+/* ── Empty state ── */
+.empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+.empty-state .eicon { font-size: 44px; margin-bottom: 12px; }
+.empty-state p { font-size: 14px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="logo">T2</div>
+    <div class="topbar-text" style="flex:1">
+      <h1>IRS Trading 212</h1>
+      <p>Trading 212 · DEGIRO · E*Trade · Portugal</p>
+    </div>
+    <select id="globalYearSelect" class="hidden" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:8px 10px;font-size:13px;font-weight:600;font-family:var(--sans);margin-right:8px;flex-shrink:0"></select>
+    <button id="themeToggle" aria-label="Alternar tema" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;flex-shrink:0">🌙</button>
+  </div>
+
+  <!-- Main scrollable area -->
+  <div id="main">
+
+    <!-- ── SCREEN: Import ── -->
+    <div class="screen active" id="screen-import">
+      <div class="upload-card" id="dropZone">
+        <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" multiple/>
+        <div class="uicon">📂</div>
+        <h2>Importar ficheiros</h2>
+        <p>Toca para adicionar ficheiros do Trading 212, DEGIRO ou E*Trade — podes selecionar vários ao mesmo tempo</p>
+      </div>
+      <div id="fileList" class="hidden" style="margin-top:12px;display:flex;flex-direction:column;gap:8px"></div>
+      <button id="clearFiles" class="hidden btn-sm" style="margin-top:10px;width:100%;text-align:center;color:var(--loss);border-color:rgba(242,95,92,0.3)">🗑 Remover todos os ficheiros</button>
+
+      <div id="errorMsg" class="error-msg hidden"></div>
+      <div id="debugPanel" style="display:none;background:rgba(79,142,247,0.1);border:1px solid var(--accent);border-radius:10px;padding:12px 14px;margin:10px 0;font-size:12px;line-height:1.8;color:var(--text)"></div>
+
+      <div class="year-bar hidden" id="controls">
+        <label>Ano fiscal
+          <select id="yearSelect"></select>
+        </label>
+        <button class="btn" id="calcBtn">Calcular</button>
+      </div>
+
+      <div class="how-card">
+        <h3 style="color:var(--accent)">Trading 212</h3>
+        <div class="how-step"><div class="step-num">1</div><div class="step-text">Perfil → <strong>History</strong> → <strong>Export CSV</strong></div></div>
+        <div class="how-step"><div class="step-num">2</div><div class="step-text">Seleciona o período completo e descarrega</div></div>
+      </div>
+      <div class="how-card" style="margin-top:10px">
+        <h3 style="color:var(--accent)">DEGIRO</h3>
+        <div class="how-step"><div class="step-num">1</div><div class="step-text">Inbox → <strong>Account Statement</strong> → seleciona datas</div></div>
+        <div class="how-step"><div class="step-num">2</div><div class="step-text">Clica <strong>Export</strong> → <strong>CSV</strong> → descarrega o ficheiro <code>Account.csv</code></div></div>
+        <div class="how-step"><div class="step-num">3</div><div class="step-text">Repete para <strong>Transactions</strong> (Activity → Transactions → Export CSV)</div></div>
+      </div>
+      <div class="how-card" style="margin-top:10px">
+        <h3 style="color:var(--accent)">E*Trade</h3>
+        <div class="how-step"><div class="step-num">1</div><div class="step-text">Accounts → <strong>Transactions</strong> → seleciona período personalizado</div></div>
+        <div class="how-step"><div class="step-num">2</div><div class="step-text">Clica o ícone de <strong>Download</strong> → <strong>CSV</strong></div></div>
+      </div>
+    </div>
+
+    <!-- ── SCREEN: Summary ── -->
+    <div class="screen" id="screen-summary">
+      <div class="empty-state" id="summaryEmpty">
+        <div class="eicon">📊</div>
+        <p>Importa um ficheiro CSV para ver o resumo</p>
+      </div>
+      <div id="summaryContent" class="hidden">
+        <div class="section-title">Resumo do ano <span id="brokerBadge" style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(79,142,247,0.15);color:var(--accent);font-weight:600;margin-left:6px;text-transform:none;letter-spacing:0"></span></div>
+        <div class="cards-grid" id="cardsGrid" style="grid-template-columns:1fr 1fr"></div>
+        <div id="taxBreakdown"></div>
+      </div>
+    </div>
+
+    <!-- ── SCREEN: FIFO ── -->
+    <div class="screen" id="screen-fifo">
+      <div class="empty-state" id="fifoEmpty">
+        <div class="eicon">📈</div>
+        <p>Importa um ficheiro CSV para ver as mais-valias</p>
+      </div>
+      <div id="fifoContent" class="hidden">
+        <div class="section-title">Mais/Menos-valias FIFO</div>
+        <div class="tx-list" id="fifoList"></div>
+      </div>
+    </div>
+
+    <!-- ── SCREEN: Rendimentos ── -->
+    <div class="screen" id="screen-income">
+      <div class="empty-state" id="incomeEmpty">
+        <div class="eicon">💰</div>
+        <p>Importa um ficheiro CSV para ver dividendos e juros</p>
+      </div>
+      <div id="incomeContent" class="hidden">
+        <div class="section-title">Dividendos</div>
+        <div class="tx-list" id="divList"></div>
+        <div class="section-title" style="margin-top:20px">Juros</div>
+        <div class="tx-list" id="intList"></div>
+      </div>
+    </div>
+
+    <!-- ── SCREEN: IRS ── -->
+    <div class="screen" id="screen-irs">
+      <div class="empty-state" id="irsEmpty">
+        <div class="eicon">🇵🇹</div>
+        <p>Importa um ficheiro CSV para ver o resumo IRS</p>
+      </div>
+      <div id="irsContent" class="hidden">
+        <div id="irsProgress" style="display:none;flex-direction:column;gap:8px;background:var(--bg);border-bottom:1px solid var(--border);padding:12px 16px 14px;margin:-16px -16px 14px;position:sticky;top:0;z-index:5;box-shadow:0 4px 12px rgba(0,0,0,0.3)">
+          <div class="section-title" style="margin:0">Resumo IRS — Anexo J</div>
+          <div>
+            <div class="irs-progress-text" style="font-size:12px;color:var(--muted);margin-bottom:6px">0 de 0 reportados</div>
+            <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden">
+              <div class="irs-progress-bar-fill" style="height:100%;width:0%;background:var(--accent);border-radius:3px;transition:width 0.2s"></div>
+            </div>
+          </div>
+        </div>
+        <div id="irsBlocks"></div>
+        <div class="export-row">
+          <button class="btn-sm" id="exportCSV">⬇ CSV</button>
+          <button class="btn-sm" id="exportJSON">⬇ JSON</button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ── SCREEN: Transações ── -->
+    <div class="screen" id="screen-txns">
+      <div class="empty-state" id="txnsEmpty">
+        <div class="eicon">📋</div>
+        <p>Importa ficheiros para ver as transações</p>
+      </div>
+      <div id="txnsContent" class="hidden">
+        <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+          <button class="msel-btn" id="mselTypeBtn" data-msel="type" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:8px 12px;font-size:13px;font-family:var(--sans);flex:1;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:6px">
+            <span class="msel-label" id="mselTypeLabel">Todos os tipos</span><span style="color:var(--muted);font-size:11px">▾</span>
+          </button>
+          <button class="msel-btn" id="mselBrokerBtn" data-msel="broker" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:8px 12px;font-size:13px;font-family:var(--sans);flex:1;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:6px">
+            <span class="msel-label" id="mselBrokerLabel">Todas as corretoras</span><span style="color:var(--muted);font-size:11px">▾</span>
+          </button>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <button class="msel-btn" id="mselTickerBtn" data-msel="ticker" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:8px 12px;font-size:13px;font-family:var(--sans);flex:1;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:6px">
+            <span class="msel-label" id="mselTickerLabel">Todos os tickers</span><span style="color:var(--muted);font-size:11px">▾</span>
+          </button>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div id="txnCount" style="font-size:12px;color:var(--muted)"></div>
+          <button id="exportTxnCSV" class="btn-sm" style="font-size:12px;padding:6px 12px">⬇ CSV</button>
+        </div>
+        <div id="txnSummary" style="display:none;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px"></div>
+        <div id="txnList" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+
+  <!-- Bottom nav -->
+  <nav class="bottomnav">
+    <button class="nav-item active" data-screen="import">
+      <span class="icon">📂</span>Importar
+    </button>
+    <button class="nav-item" data-screen="summary">
+      <span class="icon">📊</span>Resumo
+    </button>
+    <button class="nav-item" data-screen="fifo">
+      <span class="icon">📈</span>FIFO
+    </button>
+    <button class="nav-item" data-screen="income">
+      <span class="icon">💰</span>Rendim.
+    </button>
+    <button class="nav-item" data-screen="irs">
+      <span class="icon">🇵🇹</span>IRS
+    </button>
+    <button class="nav-item" data-screen="txns">
+      <span class="icon">📋</span>Transaç.
+    </button>
+  </nav>
+
+  <!-- Multi-select bottom sheet (shared by type/broker/ticker filters) -->
+  <div id="mselSheet" class="hidden" style="position:fixed;inset:0;z-index:100;display:flex;align-items:flex-end">
+    <div id="mselBackdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.5)"></div>
+    <div style="position:relative;width:100%;background:var(--surface);border-radius:20px 20px 0 0;max-height:70vh;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom,0px)">
+      <div style="padding:16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <span id="mselSheetTitle" style="font-size:15px;font-weight:700">Filtrar</span>
+        <button id="mselClearBtn" style="background:none;border:none;color:var(--accent);font-size:13px;font-weight:600;font-family:var(--sans)">Limpar</button>
+      </div>
+      <div id="mselSheetOptions" style="overflow-y:auto;padding:8px 0;flex:1"></div>
+      <div style="padding:14px 16px;border-top:1px solid var(--border)">
+        <button id="mselApplyBtn" class="btn" style="width:100%;text-align:center">Aplicar</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+// ── Theme toggle ──────────────────────────────────────────────────────────────
+(function initTheme() {
+  let saved = null;
+  try { saved = sessionStorage.getItem('t212_theme'); } catch(_) {}
+  const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+  const theme = saved || (prefersLight ? 'light' : 'dark');
+  applyTheme(theme);
+})();
+
+function applyTheme(theme) {
+  if (theme === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = theme === 'light' ? '☀️' : '🌙';
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
+  if (metaTheme) metaTheme.setAttribute('content', theme === 'light' ? '#f5f6f9' : '#0f1117');
+  try { sessionStorage.setItem('t212_theme', theme); } catch(_) {}
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('themeToggle');
+  if (btn) {
+    // Sync icon with whatever theme was applied at init
+    const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    btn.textContent = current === 'light' ? '☀️' : '🌙';
+    btn.addEventListener('click', () => {
+      const now = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+      applyTheme(now === 'light' ? 'dark' : 'light');
+    });
+  }
+});
+
+// ── State ──────────────────────────────────────────────────────────────────
+let allRows = [];
+let results = null;
+let checkedItems = {}; // persists checkbox state across re-renders, keyed by stable id
+
+// ── Navigation ─────────────────────────────────────────────────────────────
+document.querySelectorAll('.nav-item').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('screen-' + btn.dataset.screen).classList.add('active');
+  });
+});
+
+function goTo(screen) {
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.screen === screen));
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + screen).classList.add('active');
+  document.getElementById('main').scrollTo(0, 0);
+}
+
+// ── File upload ─────────────────────────────────────────────────────────────
+let loadedFiles = []; // [{name, broker, rows}]
+
+document.getElementById('fileInput').addEventListener('change', e => {
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+  clearError();
+  e.target.value = ''; // reset so same file can be re-added
+  loadFilesSequentially(files, 0);
+});
+
+document.getElementById('clearFiles').addEventListener('click', () => {
+  loadedFiles = []; allRows = []; selectedYear = null;
+  document.getElementById('globalYearSelect').classList.add('hidden');
+  document.getElementById('globalYearSelect').innerHTML = '';
+  renderFileList();
+  document.getElementById('controls').classList.add('hidden');
+  ['fifo','dividends','interest','irs','txns'].forEach(id => {
+    const e = document.getElementById(id + 'Empty');
+    const c = document.getElementById(id + 'Content');
+    if (e) e.classList.remove('hidden');
+    if (c) c.classList.add('hidden');
+  });
+  document.getElementById('irsEmpty').classList.remove('hidden');
+  document.getElementById('irsContent').classList.add('hidden');
+  document.getElementById('summaryEmpty').classList.remove('hidden');
+  document.getElementById('summaryContent').classList.add('hidden');
+  document.getElementById('summary').classList.add('hidden');
+  document.getElementById('tabs').classList.add('hidden');
+});
+
+function loadFilesSequentially(files, idx) {
+  if (idx >= files.length) { mergeAndCalculate(); return; }
+  const file = files[idx];
+  const ext = file.name.split('.').pop().toLowerCase();
+  const next = () => loadFilesSequentially(files, idx + 1);
+  if (ext === 'xlsx' || ext === 'xls') handleXLSX(file, next);
+  else handleCSVFile(file, next);
+}
+
+function rowSignature(r) {
+  // Build a stable signature from the fields that uniquely identify a transaction,
+  // independent of which file/export it came from.
+  const d = r.date instanceof Date ? r.date.getTime() : r.date;
+  return [
+    r.broker || '',
+    r.type || '',
+    (r.isin || r.ticker || '').toUpperCase(),
+    d,
+    (r.shares || 0).toFixed(6),
+    (r.price || 0).toFixed(6),
+    (r.total || 0).toFixed(2)
+  ].join('|');
+}
+
+function mergeAndCalculate() {
+  const combined = loadedFiles.flatMap(f => f.rows);
+
+  // De-duplicate by content signature: overlapping exports (e.g. two T212 files
+  // covering an overlapping date range) would otherwise double-count every shared row.
+  const seen = new Set();
+  allRows = [];
+  let dupCount = 0;
+  for (const r of combined) {
+    const sig = rowSignature(r);
+    if (seen.has(sig)) { dupCount++; continue; }
+    seen.add(sig);
+    allRows.push(r);
+  }
+  allRows.sort((a, b) => a.date - b.date);
+
+  const dbg = document.getElementById('debugPanel');
+  if (dbg) {
+    const brokerNames = { T212: 'Trading 212', DEGIRO: 'DEGIRO', ETRADE: 'E*Trade' };
+    let msg = `<b>Ficheiros: ${loadedFiles.length}</b><br>`;
+    loadedFiles.forEach(f => { msg += `• ${f.name} → ${brokerNames[f.broker]||f.broker} · ${f.rows.length} transações<br>`; });
+    msg += `<b>Total após remoção de duplicados: ${allRows.length} transações</b>`;
+    if (dupCount > 0) msg += `<br><span style="color:var(--loss)">⚠️ ${dupCount} transações duplicadas detetadas e removidas (provavelmente ficheiros com datas sobrepostas)</span>`;
+    dbg.innerHTML = msg; dbg.style.display = 'block';
+  }
+  if (dupCount > 0) {
+    showError(`Detetadas ${dupCount} transações duplicadas entre ficheiros (datas sobrepostas) — foram removidas automaticamente para evitar contagem dupla.`);
+  }
+  if (!allRows.length) { showError('Nenhuma transação encontrada nos ficheiros importados.'); return; }
+  renderFileList();
+  populateYears();
+  document.getElementById('controls').classList.remove('hidden');
+  calculate();
+}
+
+function renderFileList() {
+  const list = document.getElementById('fileList');
+  const clearBtn = document.getElementById('clearFiles');
+  if (!list) return;
+  if (!loadedFiles.length) { list.classList.add('hidden'); if(clearBtn) clearBtn.classList.add('hidden'); list.innerHTML=''; return; }
+  list.classList.remove('hidden');
+  if(clearBtn) clearBtn.classList.remove('hidden');
+  const brokerColors = { T212:'var(--accent)', DEGIRO:'var(--gain)', ETRADE:'var(--dividend)' };
+  const brokerNames  = { T212:'Trading 212', DEGIRO:'DEGIRO', ETRADE:'E*Trade' };
+  list.innerHTML = loadedFiles.map((f, i) => `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:11px 14px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:18px">${f.broker==='DEGIRO'?'🟢':f.broker==='ETRADE'?'🟡':'🔵'}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.name}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">
+          <span style="color:${brokerColors[f.broker]||'var(--muted)'};font-weight:600">${brokerNames[f.broker]||f.broker}</span>
+          · ${f.rows.length} transações
+        </div>
+      </div>
+      <button onclick="removeFile(${i})" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:2px 6px;line-height:1">×</button>
+    </div>`).join('');
+}
+
+function removeFile(idx) {
+  loadedFiles.splice(idx, 1);
+  if (!loadedFiles.length) {
+    allRows = []; selectedYear = null;
+    document.getElementById('globalYearSelect').classList.add('hidden');
+    document.getElementById('globalYearSelect').innerHTML = '';
+    renderFileList();
+    document.getElementById('controls').classList.add('hidden'); return;
+  }
+  mergeAndCalculate();
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = '⚠️ ' + msg;
+  el.classList.remove('hidden');
+}
+function clearError() { document.getElementById('errorMsg').classList.add('hidden'); }
+
+function handleCSVFile(file, done) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const rows = parseCSV(e.target.result);
+      if (!rows.length) throw new Error('Nenhuma transação encontrada em ' + file.name);
+      const broker = document._detectedBroker || 'T212';
+      document._detectedBroker = null;
+      if (loadedFiles.find(f => f.name === file.name)) { showError(file.name + ' já foi importado.'); if(done) done(); return; }
+      loadedFiles.push({ name: file.name, broker, rows });
+    } catch(err) { showError(err.message); }
+    if (done) done();
+  };
+  reader.readAsText(file);
+}
+
+
+function handleXLSX(file, done) {
+  if (window.XLSX) { _parseXLSX(file, done); return; }
+  const script = document.createElement('script');
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  script.onload = () => _parseXLSX(file, done);
+  script.onerror = () => { showError('Não foi possível carregar a biblioteca XLSX. Verifica a ligação à internet.'); if (done) done(); };
+  document.head.appendChild(script);
+}
+
+function _parseXLSX(file, done) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, { type: 'array', raw: true });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const ref = ws['!ref'];
+      const range = XLSX.utils.decode_range(ref || 'A1');
+      const numCols = range.e.c + 1;
+      const cellA1val = ws['A1'] ? String(ws['A1'].v || ws['A1'].w || '') : '';
+      const isSingleColumn = numCols === 1 && cellA1val.includes(',');
+      let csv;
+      if (isSingleColumn) {
+        const rows = [];
+        for (let r = range.s.r; r <= range.e.r; r++) {
+          const addr = XLSX.utils.encode_cell({ r, c: 0 });
+          const cell = ws[addr];
+          if (!cell) continue;
+          let v = String(cell.v !== undefined ? cell.v : (cell.w || ''));
+          try {
+            const bytes = new Uint8Array(v.length);
+            for (let i = 0; i < v.length; i++) bytes[i] = v.charCodeAt(i) & 0xff;
+            const decoded = new TextDecoder('utf-8').decode(bytes);
+            if (!decoded.includes('\uFFFD')) v = decoded;
+          } catch(_) {}
+          rows.push(v);
+        }
+        csv = rows.join('\n');
+      } else {
+        csv = XLSX.utils.sheet_to_csv(ws, { blankrows: false });
+      }
+      const rows = parseCSV(csv);
+      if (!rows.length) throw new Error('Nenhuma transação encontrada no ficheiro XLSX.');
+      const broker = document._detectedBroker || 'T212';
+      document._detectedBroker = null;
+      if (loadedFiles.find(f => f.name === file.name)) { showError(file.name + ' já foi importado.'); if (done) done(); return; }
+      loadedFiles.push({ name: file.name, broker, rows });
+    } catch(err) { showError('Erro ao processar XLSX: ' + err.message); }
+    if (done) done();
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ── Broker detection ────────────────────────────────────────────────────────
+function detectBroker(firstLine) {
+  const h = firstLine.toLowerCase();
+  // DEGIRO PT: has "isin" + "hora" or "id da ordem" or "descrição"
+  // DEGIRO NL: has "isin" + "datum" or "omschrijving"
+  if (h.includes('isin') && (h.includes('hora') || h.includes('datum') || h.includes('id da ordem') || h.includes('order id'))) return 'DEGIRO';
+  if (h.includes('omschrijving') || h.includes('descrição') && h.includes('isin')) return 'DEGIRO';
+  if (h.includes('transactiondate') || h.includes('transactiontype') || h.includes('transaction type')) return 'ETRADE';
+  return 'T212';
+}
+
+// ── Number helpers ───────────────────────────────────────────────────────────
+function parseDutchNumber(s) {
+  if (!s) return 0;
+  s = String(s).trim().replace(/^["']|["']$/g, '');
+  // "1.234,56" → 1234.56  /  "1234,56" → 1234.56
+  if (s.includes(',') && s.includes('.')) s = s.replace(/\./g, '').replace(',', '.');
+  else if (s.includes(',')) s = s.replace(',', '.');
+  s = s.replace(/[^0-9.\-]/g, '');
+  return parseFloat(s) || 0;
+}
+
+function parseDutchDate(s) {
+  if (!s) return null;
+  const m = s.match(/(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+  if (m) { const d = new Date(`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`); return isNaN(d) ? null : d; }
+  return null;
+}
+
+// ── CSV parser (router) ──────────────────────────────────────────────────────
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) throw new Error('CSV vazio ou inválido.');
+  const broker = detectBroker(lines[0]);
+  document._detectedBroker = broker;
+  if (broker === 'DEGIRO') return parseDEGIRO(lines);
+  if (broker === 'ETRADE') return parseETRADE(lines);
+  return parseT212(lines);
+}
+
+// ── Trading 212 parser ───────────────────────────────────────────────────────
+function parseT212(lines) {
+  const header = splitLine(lines[0]).map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
+  const idx = name => {
+    const map = {
+      action: ['action'],
+      time: ['time','date/time','datetime','date'],
+      ticker: ['ticker','symbol'],
+      name: ['name','instrument name','instrument'],
+      shares: ['no. of shares','shares','quantity','qty','no of shares','number of shares'],
+      price: ['price / share','price/share','price per share','price'],
+      total: ['total','total (eur)','total eur'],
+      withholding: ['withholding tax','tax withheld','dividend tax','withholding'],
+      charges: ['charges','commission','fees','stamp duty','transaction fee','finra fee','sec fee','charge','encargos','despesas','comissao','taxa','currency conversion fee'],
+      isin: ['isin'],
+      exchangerate: ['exchange rate','exchangerate','fx rate'],
+    };
+    for (const o of (map[name] || [name])) { const i = header.indexOf(o); if (i !== -1) return i; }
+    return -1;
+  };
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const c = splitLine(lines[i]).map(x => x.trim().replace(/^["']|["']$/g, ''));
+    if (c.length < 3) continue;
+    const action = (c[idx('action')] || '').trim();
+    const timeStr = (c[idx('time')] || '').trim();
+    const ticker = (c[idx('ticker')] || '').trim().toUpperCase();
+    const name = (c[idx('name')] || ticker).trim();
+    const shares = parseFloat((c[idx('shares')] || '0').replace(',','.')) || 0;
+    const price = parseFloat((c[idx('price')] || '0').replace(',','.')) || 0;
+    const total = Math.abs(parseFloat((c[idx('total')] || '0').replace(/[^0-9.\-]/g,'')) || 0);
+    const withholding = Math.abs(parseFloat((c[idx('withholding')] || '0').replace(/[^0-9.\-]/g,'')) || 0);
+    const charges = Math.abs(parseFloat((c[idx('charges')] || '0').replace(/[^0-9.\-]/g,'')) || 0);
+    const date = parseDate(timeStr);
+    if (!date) continue;
+    const au = action.toUpperCase();
+    let type = null;
+    if (au.includes('BUY')) type = 'BUY';
+    else if (au.includes('SELL')) type = 'SELL';
+    else if (au.includes('DIVIDEND')) type = 'DIVIDEND';
+    else if (au.includes('INTEREST') || au.includes('SAVINGS') || au.includes('CASH INTEREST')) type = 'INTEREST';
+    else continue;
+    // BUY/SELL must have a ticker; DIVIDEND/INTEREST can use fallback
+    const effectiveTicker = ticker || name.split(' ')[0].toUpperCase() || 'CASH';
+    if ((type === 'BUY' || type === 'SELL') && !ticker) continue;
+    const effectiveName = name || effectiveTicker;
+    // If price is in foreign currency (exchange rate != 1), convert to EUR per share
+    // Use total/shares which is already in EUR, to get correct EUR price per share
+    const exRate = parseFloat((c[idx('exchangerate')] || '1').replace(',','.')) || 1;
+    const priceEUR = (type === 'BUY' || type === 'SELL') && exRate !== 1 && shares > 0
+      ? total / shares
+      : price;
+    rows.push({ type, date, ticker: effectiveTicker, name: effectiveName, shares, price: priceEUR, total, withholding, charges, raw: action, broker: 'T212', isin: (c[idx('isin')] || '').trim().toUpperCase() });
+  }
+  if (!rows.length) throw new Error('Nenhuma transação encontrada no CSV do Trading 212.');
+  return rows;
+}
+
+// ── DEGIRO parser ─────────────────────────────────────────────────────────────
+// Format (PT): Data,Hora,Data Valor,Produto,ISIN,Descrição,T.,Mudança(ccy),Mudança(amt),Saldo(ccy),Saldo(amt),ID da Ordem
+// Col indices:   0    1    2         3        4     5          6   7            8            9           10         11
+function parseDEGIRO(lines) {
+  // First pass: collect charges by Order ID
+  const chargesByOrder = {};
+  for (let i = 1; i < lines.length; i++) {
+    const c = splitLine(lines[i]).map(x => x.trim().replace(/^["']|["']$/g, ''));
+    if (c.length < 9) continue;
+    const desc = (c[5] || '').toUpperCase();
+    const orderId = (c[11] || '').trim();
+    if (orderId && (desc.includes('COMISS') || desc.includes('TRANSACTIEKOSTEN') ||
+        desc.includes('TAXAS DE TERCEIROS') || desc.includes('IMPOSTO SOBRE TRANSA') ||
+        desc.includes('TRANSACTION TAX') || desc.includes('BELASTING'))) {
+      chargesByOrder[orderId] = (chargesByOrder[orderId] || 0) + Math.abs(parseDutchNumber(c[8]));
+    }
+  }
+
+  // Second pass: parse transactions
+  const rawRows = [], withholdingRows = [];
+  const SKIP = ['COMISS','TRANSACTIEKOSTEN','TAXAS DE TERCEIROS','IMPOSTO SOBRE TRANSA',
+    'CONECTIVIDADE','AANSLUITINGSKOSTEN','SWEEP','LEVANTAMENTO SEPA','SEPA',
+    'DEPÓSITOS NA SUA','LEVANTAMENTOS DA SUA','DEGIRO CASH SWEEP','FLATEX WITHDRAWAL',
+    'PROCESSED FLATEX','CRÉDITO DE DIVISA','LEVANTAMENTO DE DIVISA','REBATE',
+    'DEGIRO REBATE','CUSTO DE CONECTIVIDADE'];
+
+  for (let i = 1; i < lines.length; i++) {
+    const c = splitLine(lines[i]).map(x => x.trim().replace(/^["']|["']$/g, ''));
+    if (c.length < 6) continue;
+
+    const dateStr  = c[0] || '';
+    const prod     = (c[3] || '').trim();
+    const isin     = (c[4] || '').trim().toUpperCase();
+    const desc     = (c[5] || '').trim();
+    const fxRate   = parseDutchNumber(c[6]);   // T. column (FX rate for currency ops)
+    const mutCcy   = (c[7] || 'EUR').trim().toUpperCase();
+    const mutAmt   = parseDutchNumber(c[8]);
+    const orderId  = (c[11] || '').trim();
+
+    const date = parseDutchDate(dateStr);
+    if (!date) continue;
+
+    const descUp = desc.toUpperCase();
+    if (SKIP.some(k => descUp.includes(k))) continue;
+
+    // Convert to EUR if needed (dividend/interest in USD etc.)
+    let amtEUR = Math.abs(mutAmt);
+    if (mutCcy !== 'EUR' && fxRate > 0) amtEUR = amtEUR / fxRate;
+
+    // Extract qty and price from description text
+    // e.g. "Compra 40 VanEck...@38,175 EUR" or "Venda 4 Schneider@254,1 EUR"
+    const tm = desc.match(/(Compra|Venda|Koop|Verkoop)\s+([\d,.]+)\s+.+@([\d,.]+)/i);
+    const qty   = tm ? Math.abs(parseDutchNumber(tm[2])) : 0;
+    const price = tm ? Math.abs(parseDutchNumber(tm[3])) : 0;
+
+    const charges  = orderId ? (chargesByOrder[orderId] || 0) : 0;
+    const ticker   = isin || prod.replace(/\s+/g, '_').toUpperCase().substring(0, 12);
+    const prodName = prod || isin || desc;
+
+    if (descUp.startsWith('COMPRA') || descUp.startsWith('KOOP') || descUp.startsWith('FUSIE: KOOP') || descUp.startsWith('WIJZIGING ISIN: KOOP')) {
+      if (!ticker) continue;
+      rawRows.push({ type:'BUY', date, ticker, name:prodName, shares:qty, price, total:qty*price, withholding:0, charges, raw:desc, broker:'DEGIRO', isin });
+    } else if (descUp.startsWith('VENDA') || descUp.startsWith('VERKOOP') || descUp.startsWith('FUSIE: VERKOOP') || descUp.startsWith('WIJZIGING ISIN: VERKOOP')) {
+      if (!ticker) continue;
+      rawRows.push({ type:'SELL', date, ticker, name:prodName, shares:qty, price, total:amtEUR, withholding:0, charges, raw:desc, broker:'DEGIRO', isin });
+    } else if ((descUp === 'DIVIDENDO' || (descUp.startsWith('DIVIDEND') && !descUp.includes('IMPOSTO') && !descUp.includes('BELASTING'))) && isin) {
+      rawRows.push({ type:'DIVIDEND', date, ticker, name:prodName, shares:0, price:0, total:amtEUR, withholding:0, charges:0, raw:desc, broker:'DEGIRO', isin });
+    } else if (descUp.includes('IMPOSTO SOBRE DIVIDENDO') || descUp.includes('DIVIDENDBELASTING')) {
+      withholdingRows.push({ date, isin, amount: amtEUR });
+    } else if (descUp.includes('FLATEX INTEREST') || descUp.includes('RENTE') || descUp.includes('JUROS FLATEX')) {
+      if (amtEUR > 0) rawRows.push({ type:'INTEREST', date, ticker:'CASH', name:desc, shares:0, price:0, total:amtEUR, withholding:0, charges:0, raw:desc, broker:'DEGIRO', isin:'' });
+    }
+  }
+
+  // Match withholding to dividends by ISIN within 5 days
+  for (const wh of withholdingRows) {
+    const match = rawRows
+      .filter(r => r.type === 'DIVIDEND' && r.isin === wh.isin && Math.abs(r.date - wh.date) < 5*24*3600*1000)
+      .sort((a, b) => Math.abs(a.date - wh.date) - Math.abs(b.date - wh.date))[0];
+    if (match) match.withholding += wh.amount;
+  }
+
+  if (!rawRows.length) throw new Error('Nenhuma transação encontrada no CSV do DEGIRO. Certifica-te que exportaste o Account Statement completo (com compras e vendas).');
+  return rawRows;
+}
+
+// ── E*Trade parser ───────────────────────────────────────────────────────────
+function parseETRADE(lines) {
+  const header = splitLine(lines[0]).map(h => h.trim().toLowerCase().replace(/['"]/g,'').replace(/\s+/g,' '));
+  const col = (...opts) => { for (const o of opts) { const i = header.indexOf(o); if (i !== -1) return i; } return -1; };
+  const iDate   = col('transactiondate','date','transaction date');
+  const iType   = col('transactiontype','transaction type','type','action');
+  const iDesc   = col('securitydescription','description','security description');
+  const iSymbol = col('symbol','ticker','security');
+  const iQty    = col('quantity','qty','shares');
+  const iPrice  = col('price','price/share','unit price');
+  const iAmount = col('amount','total','net amount');
+  const iComm   = col('commission','commissions','fees','charge');
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const c = splitLine(lines[i]).map(x => x.trim().replace(/^["']|["']$/g,''));
+    if (c.length < 3) continue;
+    const date = parseDate(iDate >= 0 ? c[iDate] : '');
+    if (!date) continue;
+    const typeRaw = (iType >= 0 ? c[iType] : '').trim().toUpperCase();
+    const desc    = iDesc >= 0 ? c[iDesc] : '';
+    const symbol  = (iSymbol >= 0 ? c[iSymbol] : '').trim().toUpperCase();
+    const ticker  = symbol || desc.split(' ')[0].toUpperCase();
+    const qty     = Math.abs(parseFloat((iQty >= 0 ? c[iQty] : '0').replace(/[^0-9.\-]/g,'')) || 0);
+    const price   = Math.abs(parseFloat((iPrice >= 0 ? c[iPrice] : '0').replace(/[^0-9.\-]/g,'')) || 0);
+    const amount  = Math.abs(parseFloat((iAmount >= 0 ? c[iAmount] : '0').replace(/[^0-9.\-]/g,'')) || 0);
+    const charges = Math.abs(parseFloat((iComm >= 0 ? c[iComm] : '0').replace(/[^0-9.\-]/g,'')) || 0);
+    let type = null;
+    if (typeRaw.includes('BUY') || typeRaw === 'B') type = 'BUY';
+    else if (typeRaw.includes('SELL') || typeRaw === 'S') type = 'SELL';
+    else if (typeRaw.includes('DIV')) type = 'DIVIDEND';
+    else if (typeRaw.includes('INT')) type = 'INTEREST';
+    else continue;
+    if (!ticker) continue;
+    rows.push({ type, date, ticker, name: desc || ticker, shares: qty, price, total: amount, withholding: 0, charges, raw: typeRaw, broker: 'ETRADE' });
+  }
+  if (!rows.length) throw new Error('Nenhuma transação encontrada no CSV do E*Trade.');
+  return rows;
+}
+
+function splitLine(line) {
+  const r = []; let cur = '', inQ = false;
+  for (const ch of line) {
+    if (ch === '"') inQ = !inQ;
+    else if (ch === ',' && !inQ) { r.push(cur); cur = ''; }
+    else cur += ch;
+  }
+  r.push(cur); return r;
+}
+
+function parseDate(s) {
+  if (!s) return null;
+  // Safari does not parse "YYYY-MM-DD HH:MM:SS" — must use "YYYY-MM-DDTHH:MM:SS"
+  s = s.trim().replace(/^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})/, '$1T$2');
+  let d = new Date(s);
+  if (!isNaN(d)) return d;
+  // DD/MM/YYYY or DD-MM-YYYY
+  const m = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if (m) d = new Date(`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`);
+  return isNaN(d) ? null : d;
+}
+
+// ── Year select ─────────────────────────────────────────────────────────────
+let selectedYear = null;
+
+function populateYears() {
+  const years = [...new Set(allRows.map(r => r.date.getFullYear()))].sort((a,b) => b-a);
+  const localSel = document.getElementById('yearSelect');
+  const globalSel = document.getElementById('globalYearSelect');
+  const optionsHtml = years.map(y => `<option value="${y}">${y}</option>`).join('');
+  localSel.innerHTML = optionsHtml;
+  globalSel.innerHTML = optionsHtml;
+  if (years.length) {
+    selectedYear = selectedYear && years.includes(selectedYear) ? selectedYear : years[0];
+    localSel.value = selectedYear;
+    globalSel.value = selectedYear;
+    globalSel.classList.remove('hidden');
+  }
+}
+
+function setYear(year) {
+  year = parseInt(year);
+  if (!year || year === selectedYear) return;
+  selectedYear = year;
+  const localSel = document.getElementById('yearSelect');
+  const globalSel = document.getElementById('globalYearSelect');
+  if (localSel.value !== String(year)) localSel.value = year;
+  if (globalSel.value !== String(year)) globalSel.value = year;
+  calculate();
+}
+
+document.getElementById('yearSelect').addEventListener('change', e => setYear(e.target.value));
+document.getElementById('globalYearSelect').addEventListener('change', e => setYear(e.target.value));
+document.getElementById('calcBtn').addEventListener('click', calculate);
+
+// ── FIFO engine ─────────────────────────────────────────────────────────────
+function calculate() {
+  clearError();
+  const year = selectedYear || parseInt(document.getElementById('yearSelect').value);
+  if (!year) return;
+  selectedYear = year;
+  const sorted = [...allRows].sort((a,b) => a.date - b.date);
+  const queues = {};
+  const fifoSales = [], dividends = [], interests = [];
+
+  for (const row of sorted) {
+    if (!queues[row.ticker]) queues[row.ticker] = [];
+    if (row.type === 'BUY') {
+      queues[row.ticker].push({ date: row.date, shares: row.shares, price: row.price, charges: row.charges });
+    } else if (row.type === 'SELL') {
+      const sale = processSale(row, queues[row.ticker]);
+      sale.isin = row.isin || '';
+      if (row.date.getFullYear() === year) fifoSales.push(sale);
+    } else if (row.type === 'DIVIDEND' && row.date.getFullYear() === year) {
+      dividends.push({ date: row.date, ticker: row.ticker, name: row.name, gross: row.total, withholding: row.withholding, isin: row.isin || '' });
+    } else if (row.type === 'INTEREST' && row.date.getFullYear() === year) {
+      interests.push({ date: row.date, description: row.name || row.raw || 'Juros', gross: row.total, withholding: row.withholding, broker: row.broker || '' });
+    }
+  }
+
+  results = { year, fifoSales, dividends, interests };
+  renderAll();
+  const brokerNames = { T212: 'Trading 212', DEGIRO: 'DEGIRO', ETRADE: 'E*Trade' };
+  const badge = document.getElementById('brokerBadge');
+  if (badge) badge.textContent = brokerNames[document._detectedBroker] || document._detectedBroker || '';
+  goTo('summary');
+}
+
+function processSale(row, queue) {
+  let rem = row.shares, totalCost = 0, totalBuyCharges = 0;
+  const lots = [], tempQ = queue.map(l => ({...l}));
+  while (rem > 0 && tempQ.length > 0) {
+    const lot = tempQ[0];
+    const used = Math.min(lot.shares, rem);
+    const ratio = used / lot.shares; // proportion of this lot used
+    const lotCharges = (lot.charges || 0) * ratio;
+    totalCost += used * lot.price + lotCharges;
+    totalBuyCharges += lotCharges;
+    lots.push({ date: lot.date, shares: used, price: lot.price, charges: lotCharges });
+    lot.shares -= used; rem -= used;
+    if (lot.shares <= 0) tempQ.shift();
+  }
+  let rem2 = row.shares;
+  while (rem2 > 0 && queue.length > 0) {
+    const used = Math.min(queue[0].shares, rem2);
+    queue[0].shares -= used; rem2 -= used;
+    if (queue[0].shares <= 0) queue.shift();
+  }
+  const sellCharges = row.charges || 0;
+  const revenue = row.shares * row.price; // 901 gross
+  const gainLoss = revenue - totalCost;
+  return { date: row.date, ticker: row.ticker, name: row.name, shares: row.shares, sellPrice: row.price,
+    sellCharges, buyCharges: totalBuyCharges, totalCharges: totalBuyCharges + sellCharges,
+    revenue, cost: totalCost, gainLoss, lots, broker: row.broker || '' };
+}
+
+// ── Format helpers ──────────────────────────────────────────────────────────
+const fmt = (n, d=2) => n.toLocaleString('pt-PT', { minimumFractionDigits: d, maximumFractionDigits: d });
+const fmtEur = n => fmt(n) + ' €';
+const fmtDate = d => d.toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+const fmtDateShort = d => d.toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: '2-digit' });
+
+// ── Render all ──────────────────────────────────────────────────────────────
+
+// ── Render Transactions ───────────────────────────────────────────────────────
+const BROKER_LABEL = { T212: 'Trading 212', DEGIRO: 'DEGIRO', ETRADE: 'E*Trade' };
+const BROKER_COLOR = { T212: 'var(--accent)', DEGIRO: 'var(--gain)', ETRADE: 'var(--dividend)' };
+const TYPE_LABEL   = { BUY:'Compra', SELL:'Venda', DIVIDEND:'Dividendo', INTEREST:'Juro' };
+const TYPE_COLOR   = { BUY:'var(--gain)', SELL:'var(--loss)', DIVIDEND:'var(--dividend)', INTEREST:'var(--interest)' };
+const TYPE_ICON    = { BUY:'↑', SELL:'↓', DIVIDEND:'$', INTEREST:'%' };
+
+// Multi-select filter state: empty array = "all" (no filtering on that dimension)
+const mselState = { type: [], broker: [], ticker: [] };
+let mselDraft = []; // working selection while the sheet is open, applied on "Aplicar"
+
+const MSEL_TYPE_OPTIONS = [
+  { value: 'BUY', label: 'Compras' },
+  { value: 'SELL', label: 'Vendas' },
+  { value: 'DIVIDEND', label: 'Dividendos' },
+  { value: 'INTEREST', label: 'Juros' },
+];
+const MSEL_BROKER_OPTIONS = [
+  { value: 'T212', label: 'Trading 212' },
+  { value: 'DEGIRO', label: 'DEGIRO' },
+  { value: 'ETRADE', label: 'E*Trade' },
+];
+
+function mselTickerOptions() {
+  return [...new Set(allRows.map(r => r.ticker).filter(Boolean))].sort().map(t => ({ value: t, label: t }));
+}
+
+function mselOptionsFor(kind) {
+  if (kind === 'type') return MSEL_TYPE_OPTIONS;
+  if (kind === 'broker') return MSEL_BROKER_OPTIONS;
+  if (kind === 'ticker') return mselTickerOptions();
+  return [];
+}
+
+function mselTitleFor(kind) {
+  return kind === 'type' ? 'Tipo de transação' : kind === 'broker' ? 'Corretora' : 'Ticker';
+}
+
+function mselAllLabel(kind) {
+  return kind === 'type' ? 'Todos os tipos' : kind === 'broker' ? 'Todas as corretoras' : 'Todos os tickers';
+}
+
+function updateMselButtonLabel(kind) {
+  const labelEl = document.getElementById('msel' + kind.charAt(0).toUpperCase() + kind.slice(1) + 'Label');
+  if (!labelEl) return;
+  const sel = mselState[kind];
+  if (!sel.length) { labelEl.textContent = mselAllLabel(kind); return; }
+  const opts = mselOptionsFor(kind);
+  if (sel.length === 1) {
+    const opt = opts.find(o => o.value === sel[0]);
+    labelEl.textContent = opt ? opt.label : sel[0];
+  } else {
+    labelEl.textContent = `${sel.length} selecionados`;
+  }
+}
+
+function openMselSheet(kind) {
+  mselDraft = [...mselState[kind]];
+  document.getElementById('mselSheet').dataset.kind = kind;
+  document.getElementById('mselSheetTitle').textContent = mselTitleFor(kind);
+  renderMselOptions(kind);
+  document.getElementById('mselSheet').classList.remove('hidden');
+}
+
+function renderMselOptions(kind) {
+  const opts = mselOptionsFor(kind);
+  const container = document.getElementById('mselSheetOptions');
+  if (!opts.length) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">Sem opções disponíveis</div>';
+    return;
+  }
+  container.innerHTML = opts.map(o => {
+    const checked = mselDraft.includes(o.value);
+    return `
+      <div class="msel-option" data-value="${o.value}" onclick="toggleMselDraft('${o.value}')">
+        <div class="msel-check ${checked?'checked':''}"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+        <span class="msel-option-label">${o.label}</span>
+      </div>`;
+  }).join('');
+}
+
+function toggleMselDraft(value) {
+  const idx = mselDraft.indexOf(value);
+  if (idx === -1) mselDraft.push(value); else mselDraft.splice(idx, 1);
+  const kind = document.getElementById('mselSheet').dataset.kind;
+  renderMselOptions(kind);
+}
+
+function closeMselSheet() {
+  document.getElementById('mselSheet').classList.add('hidden');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.msel-btn').forEach(btn => {
+    btn.addEventListener('click', () => openMselSheet(btn.dataset.msel));
+  });
+  document.getElementById('mselBackdrop').addEventListener('click', closeMselSheet);
+  document.getElementById('mselClearBtn').addEventListener('click', () => {
+    mselDraft = [];
+    const kind = document.getElementById('mselSheet').dataset.kind;
+    renderMselOptions(kind);
+  });
+  document.getElementById('mselApplyBtn').addEventListener('click', () => {
+    const kind = document.getElementById('mselSheet').dataset.kind;
+    mselState[kind] = [...mselDraft];
+    updateMselButtonLabel(kind);
+    closeMselSheet();
+    renderTxns();
+  });
+});
+
+function renderTxns() {
+  document.getElementById('txnsEmpty').classList.add('hidden');
+  document.getElementById('txnsContent').classList.remove('hidden');
+
+  updateMselButtonLabel('type');
+  updateMselButtonLabel('broker');
+  updateMselButtonLabel('ticker');
+
+  let rows = [...allRows];
+  if (mselState.type.length)   rows = rows.filter(r => mselState.type.includes(r.type));
+  if (mselState.broker.length) rows = rows.filter(r => mselState.broker.includes(r.broker));
+  if (mselState.ticker.length) rows = rows.filter(r => mselState.ticker.includes(r.ticker));
+
+  // Sort by ticker then date
+  rows.sort((a, b) => {
+    const ta = a.ticker || '', tb = b.ticker || '';
+    if (ta < tb) return -1;
+    if (ta > tb) return 1;
+    return a.date - b.date;
+  });
+
+  document.getElementById('txnCount').textContent = `${rows.length} transações`;
+
+  const sumDiv = document.getElementById('txnSummary');
+
+  if (!rows.length) {
+    document.getElementById('txnList').innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">Nenhuma transação encontrada</div>';
+    if (sumDiv) { sumDiv.innerHTML = ''; sumDiv.style.display = 'none'; }
+    return;
+  }
+
+  // Summary metrics
+  if (rows.length && sumDiv) {
+    const buys  = rows.filter(r => r.type === 'BUY');
+    const sells = rows.filter(r => r.type === 'SELL');
+    const divs  = rows.filter(r => r.type === 'DIVIDEND');
+    const ints  = rows.filter(r => r.type === 'INTEREST');
+    const tBuy  = buys.reduce((s,r)  => s + r.total, 0);
+    const tSell = sells.reduce((s,r) => s + r.total, 0);
+    const tDiv  = divs.reduce((s,r)  => s + r.total, 0);
+    const tInt  = ints.reduce((s,r)  => s + r.total, 0);
+    const tEnc  = rows.reduce((s,r)  => s + (r.charges||0), 0);
+    const tRet  = rows.reduce((s,r)  => s + (r.withholding||0), 0);
+    const sc = (label, count, val, color) =>
+      `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 12px">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">${label} (${count})</div>
+        <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:${color}">${val}</div>
+      </div>`;
+    let cards = '';
+    if (buys.length)  cards += sc('Compras',   buys.length,  '-'+fmtEur(tBuy),  'var(--loss)');
+    if (sells.length) cards += sc('Vendas',    sells.length, '+'+fmtEur(tSell), 'var(--gain)');
+    if (divs.length)  cards += sc('Dividendos',divs.length,  '+'+fmtEur(tDiv),  'var(--dividend)');
+    if (ints.length)  cards += sc('Juros',     ints.length,  '+'+fmtEur(tInt),  'var(--interest)');
+    if (tEnc > 0)     cards += sc('Encargos',  rows.filter(r=>r.charges>0).length, '-'+fmtEur(tEnc), 'var(--loss)');
+    if (tRet > 0)     cards += sc('Retenção',  rows.filter(r=>r.withholding>0).length, '-'+fmtEur(tRet), 'var(--loss)');
+    sumDiv.innerHTML = cards;
+    sumDiv.style.display = 'grid';
+  } else if (sumDiv) {
+    sumDiv.style.display = 'none';
+  }
+
+  let lastTicker = null;
+  let html = '';
+  for (const r of rows) {
+    const ticker = r.ticker || '—';
+    const rname  = r.name && r.name !== ticker ? r.name : '';
+    // Group header when ticker changes
+    if (ticker !== lastTicker) {
+      if (lastTicker !== null) html += '<div style="height:8px"></div>';
+      html += `<div style="padding:4px 2px;margin-top:2px">
+        <div style="font-size:12px;font-weight:700;color:var(--text)">${ticker}${r.isin ? ' <span style=\"font-size:10px;color:var(--muted);font-weight:400\">' + r.isin + '</span>' : ''}</div>
+        ${rname ? '<div style=\"font-size:11px;color:var(--muted);margin-top:1px\">' + rname + '</div>' : ''}
+      </div>`;
+      lastTicker = ticker;
+    }
+
+    const amtSign = r.type === 'BUY' ? '-' : '+';
+    const amtColor = r.type === 'BUY' ? 'var(--loss)' : 'var(--gain)';
+    const broker = BROKER_LABEL[r.broker] || r.broker || '—';
+    const brokerColor = BROKER_COLOR[r.broker] || 'var(--muted)';
+
+    html += `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="width:26px;height:26px;border-radius:50%;background:${TYPE_COLOR[r.type]}22;color:${TYPE_COLOR[r.type]};font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${TYPE_ICON[r.type]}</span>
+            <div>
+              <span style="font-size:13px;font-weight:700;color:${TYPE_COLOR[r.type]}">${TYPE_LABEL[r.type]||r.type}</span>
+              ${r.shares ? `<span style="font-size:12px;color:var(--muted);margin-left:6px">${fmt(r.shares,4)} un.</span>` : ''}
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:var(--mono);font-size:13px;font-weight:700;color:${r.type==='BUY'?'var(--loss)':'var(--gain)'}">${r.type==='BUY'?'-':'+'}${fmtEur(r.total)}</div>
+            ${r.price ? `<div style="font-size:11px;color:var(--muted)">${fmtEur(r.price)}/un.</div>` : ''}
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:11px;color:var(--muted)">${fmtDate(r.date)}</div>
+          <div style="display:flex;gap:6px;align-items:center">
+            ${r.charges > 0 ? `<span style="font-size:11px;color:var(--muted)">enc. ${fmtEur(r.charges)}</span>` : ''}
+            ${r.withholding > 0 ? `<span style="font-size:11px;color:var(--muted)">ret. ${fmtEur(r.withholding)}</span>` : ''}
+            <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;background:${brokerColor}22;color:${brokerColor}">${broker}</span>
+          </div>
+        </div>
+      </div>`;
+  }
+  document.getElementById('txnList').innerHTML = html;
+}
+
+// Export button listener
+document.addEventListener('DOMContentLoaded', () => {
+  const exportBtn = document.getElementById('exportTxnCSV');
+  if (exportBtn) exportBtn.addEventListener('click', exportTxnCSV);
+});
+
+function exportTxnCSV() {
+  if (!allRows.length) return;
+
+  // Today's hypothetical SMH sell: 23 units @ €101, T212, no charges
+  const today = new Date();
+  const todayStr = fmtDate(today);
+  const smhSell = {
+    type: 'SELL', date: today, ticker: 'IE00BMC38736', name: 'VanEck Semiconductor (Acc)',
+    shares: 23, price: 101, total: 23 * 101, charges: 0, withholding: 0, broker: 'T212',
+    isin: 'IE00BMC38736', isHypothetical: true
+  };
+
+  // Merge real rows + hypothetical, sort by ticker then date
+  const rows = [...allRows, smhSell].sort((a, b) => {
+    const ta = a.ticker || '', tb = b.ticker || '';
+    if (ta < tb) return -1; if (ta > tb) return 1;
+    return a.date - b.date;
+  });
+
+  let csv = 'Tipo,Data,Ticker,ISIN,Nome,Quantidade,Preco EUR,Total EUR,Encargos EUR,Retencao EUR,Corretora,Hipotetico\n';
+  for (const r of rows) {
+    csv += [
+      r.type,
+      fmtDate(r.date),
+      r.ticker || '',
+      r.isin || '',
+      `"${(r.name||'').replace(/"/g,'')}"`,
+      r.shares ? fmt(r.shares, 4) : '',
+      r.price  ? fmt(r.price, 4)  : '',
+      fmt(r.total || 0, 2),
+      fmt(r.charges || 0, 2),
+      fmt(r.withholding || 0, 2),
+      BROKER_LABEL[r.broker] || r.broker || '',
+      r.isHypothetical ? 'SIM' : ''
+    ].join(',') + '\n';
+  }
+  dl('transacoes.csv', csv, 'text/csv');
+}
+
+function renderAll() {
+  renderSummary();
+  renderFIFO();
+  renderIncome();
+  renderIRS();
+  renderTxns();
+}
+
+function renderSummary() {
+  const { fifoSales, dividends, interests } = results;
+  const gain = fifoSales.reduce((s,r) => s + (r.gainLoss > 0 ? r.gainLoss : 0), 0);
+  const loss = fifoSales.reduce((s,r) => s + (r.gainLoss < 0 ? r.gainLoss : 0), 0);
+  const net = gain + loss;
+  const totalDiv = dividends.reduce((s,d) => s + d.gross, 0);
+  const totalInt = interests.reduce((s,i) => s + i.gross, 0);
+  const totalWH = dividends.reduce((s,d) => s + d.withholding, 0) + interests.reduce((s,i) => s + i.withholding, 0);
+  const totalCharges = fifoSales.reduce((s,r) => s + (r.totalCharges || 0), 0);
+
+  document.getElementById('summaryEmpty').classList.add('hidden');
+  document.getElementById('summaryContent').classList.remove('hidden');
+
+  // Tax estimates at 28% autonomous rate
+  const taxG    = Math.max(0, net * 0.28);               // Cat G: 28% on net gain (0 if loss)
+  const taxE    = (totalDiv + totalInt) * 0.28;           // Cat E: 28% on gross
+  const taxENet = Math.max(0, taxE - totalWH);            // after foreign tax credit
+  const totalTax = taxG + taxENet;
+
+  document.getElementById('cardsGrid').innerHTML = `
+    <div class="scard">
+      <div class="slabel">Mais-valias</div>
+      <div class="svalue gain">+${fmtEur(gain)}</div>
+      <div class="ssub">${fifoSales.filter(s=>s.gainLoss>0).length} vendas</div>
+    </div>
+    <div class="scard">
+      <div class="slabel">Menos-valias</div>
+      <div class="svalue loss">${fmtEur(loss)}</div>
+      <div class="ssub">${fifoSales.filter(s=>s.gainLoss<0).length} vendas</div>
+    </div>
+    <div class="scard">
+      <div class="slabel">Resultado líquido Cat. G</div>
+      <div class="svalue ${net>=0?'gain':'loss'}">${net>=0?'+':''}${fmtEur(net)}</div>
+      <div class="ssub">Mais-valias − Menos-valias</div>
+    </div>
+    <div class="scard">
+      <div class="slabel">Total de encargos</div>
+      <div class="svalue loss">-${fmtEur(totalCharges)}</div>
+      <div class="ssub">Comissões de compra e venda</div>
+    </div>
+    <div class="scard">
+      <div class="slabel">Dividendos</div>
+      <div class="svalue divcolor">${fmtEur(totalDiv)}</div>
+      <div class="ssub">${dividends.length} pagamentos</div>
+    </div>
+    <div class="scard">
+      <div class="slabel">Juros</div>
+      <div class="svalue intcolor">${fmtEur(totalInt)}</div>
+      <div class="ssub">${interests.length} pagamentos</div>
+    </div>
+    <div class="scard">
+      <div class="slabel">Retenção na fonte</div>
+      <div class="svalue" style="color:var(--muted);font-size:16px">-${fmtEur(totalWH)}</div>
+      <div class="ssub">Crédito de imposto</div>
+    </div>
+  `;
+
+  // ── Imposto a pagar: secção separada por categoria ──────────────────────────
+  document.getElementById('taxBreakdown').innerHTML = `
+    <div class="section-title" style="margin-top:24px">Imposto a pagar à AT</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:4px;overflow:hidden">
+
+      <div style="padding:14px 16px;border-bottom:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-size:13px;font-weight:700;color:var(--accent)">Categoria G — Mais-valias</span>
+          <span style="font-family:var(--mono);font-size:16px;font-weight:700;color:${net<0?'var(--muted)':'var(--loss)'}">${net<0?'0,00 €':fmtEur(taxG)}</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted)">${net<0?`Resultado líquido negativo (${fmtEur(net)}) — sem imposto a pagar`:`28% × ${fmtEur(net)} de resultado líquido`}</div>
+      </div>
+
+      <div style="padding:14px 16px;border-bottom:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-size:13px;font-weight:700;color:var(--dividend)">Categoria E — Dividendos e Juros</span>
+          <span style="font-family:var(--mono);font-size:16px;font-weight:700;color:var(--loss)">${fmtEur(taxENet)}</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted)">28% × ${fmtEur(totalDiv+totalInt)} bruto − ${fmtEur(totalWH)} retenção já paga no estrangeiro</div>
+      </div>
+
+      <div style="padding:16px;background:rgba(242,95,92,0.08)">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:14px;font-weight:700;color:var(--text)">Total estimado a pagar</span>
+          <span style="font-family:var(--mono);font-size:24px;font-weight:800;color:var(--loss)">${fmtEur(totalTax)}</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Categoria G e Categoria E são tributadas separadamente — perdas numa não compensam a outra à taxa autónoma de 28%</div>
+      </div>
+
+    </div>
+  `;
+}
+
+function renderFIFO() {
+  const { fifoSales } = results;
+  document.getElementById('fifoEmpty').classList.add('hidden');
+  document.getElementById('fifoContent').classList.remove('hidden');
+  const list = document.getElementById('fifoList');
+  if (!fifoSales.length) {
+    list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">Nenhuma venda no ano selecionado</div>';
+    return;
+  }
+  let cards = '';
+  for (const s of fifoSales) {
+    const totalLots = s.lots.length;
+    s.lots.forEach((lot, li) => {
+      const lotFraction   = lot.shares / s.shares;
+      const lotSellCharge = (s.sellCharges || 0) * lotFraction;
+      const lotRevNet     = s.sellPrice * lot.shares; // 901: gross revenue
+      const lotAcq        = lot.shares * lot.price;           // 902: pure acquisition
+      const lotCost       = lotAcq + (lot.charges || 0);      // for GL calc
+      const lotGL         = lotRevNet - lotCost;
+      cards += `
+      <div class="fifo-card">
+        <div class="fifo-top">
+          <div>
+            <div class="fifo-ticker">${s.ticker}${totalLots > 1 ? ` <span style="font-size:11px;color:var(--muted);font-weight:400">lote ${li+1}/${totalLots}</span>` : ''} <span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:5px;background:${BROKER_COLOR[s.broker]||'var(--muted)'}22;color:${BROKER_COLOR[s.broker]||'var(--muted)'}">${BROKER_LABEL[s.broker]||s.broker||''}</span></div>
+            <div style="font-size:11px;color:var(--muted)">${s.name}</div>
+          </div>
+          <div class="fifo-gl ${lotGL >= 0 ? 'gain' : 'loss'}">${lotGL >= 0 ? '+' : ''}${fmtEur(lotGL)}</div>
+        </div>
+        <div class="fifo-row"><span class="fk">Data de aquisição</span><span class="fv">${fmtDate(lot.date)}</span></div>
+        <div class="fifo-row"><span class="fk">Data de realização</span><span class="fv">${fmtDate(s.date)}</span></div>
+        <div class="fifo-row"><span class="fk">Quantidade</span><span class="fv">${fmt(lot.shares, 4)}</span></div>
+        <div class="fifo-row"><span class="fk">Preço de compra</span><span class="fv">${fmtEur(lot.price)}</span></div>
+        <div class="fifo-row"><span class="fk">Preço de venda</span><span class="fv">${fmtEur(s.sellPrice)}</span></div>
+        ${(lot.charges||0) > 0 ? `<div class="fifo-row"><span class="fk">Encargos compra</span><span class="fv loss">-${fmtEur(lot.charges)}</span></div>` : ''}
+        ${lotSellCharge > 0 ? `<div class="fifo-row"><span class="fk">Encargos venda (prop.)</span><span class="fv loss">-${fmtEur(lotSellCharge)}</span></div>` : ''}
+        <div class="fifo-row" style="border-top:1px solid var(--border);margin-top:6px;padding-top:8px">
+          <span class="fk" style="font-weight:600;color:var(--text)">Campo 901 — Valor realização</span>
+          <span class="fv" style="font-weight:600;color:var(--text)">${fmtEur(lotRevNet)}</span>
+        </div>
+        <div class="fifo-row">
+          <span class="fk" style="font-weight:600;color:var(--text)">Campo 902 — Valor aquisição</span>
+          <span class="fv" style="font-weight:600;color:var(--text)">${fmtEur(lotAcq)}</span>
+        </div>
+      </div>`;
+    });
+  }
+  list.innerHTML = cards;
+}
+function renderIncome() {
+  const { dividends, interests } = results;
+  document.getElementById('incomeEmpty').classList.add('hidden');
+  document.getElementById('incomeContent').classList.remove('hidden');
+
+  document.getElementById('divList').innerHTML = dividends.length
+    ? dividends.map(d => `
+      <div class="tx-card">
+        <div class="tx-top">
+          <div><div class="tx-ticker">${d.ticker}</div>${d.name && d.name !== d.ticker ? `<div style="font-size:11px;color:var(--muted);margin-top:1px">${d.name}</div>` : ''}</div>
+          <div class="tx-amount divcolor">+${fmtEur(d.gross)}</div>
+        </div>
+        <div class="tx-bottom">
+          <span class="tx-meta">${fmtDate(d.date)} · Ret: ${fmtEur(d.withholding)}</span>
+          <span class="badge badge-div">DIV</span>
+        </div>
+      </div>`).join('')
+    : '<div style="color:var(--muted);font-size:13px;padding:8px 0">Nenhum dividendo</div>';
+
+  document.getElementById('intList').innerHTML = interests.length
+    ? interests.map(i => `
+      <div class="tx-card">
+        <div class="tx-top">
+          <div class="tx-ticker" style="font-size:13px">${i.description}</div>
+          <div class="tx-amount intcolor">+${fmtEur(i.gross)}</div>
+        </div>
+        <div class="tx-bottom">
+          <span class="tx-meta">${fmtDate(i.date)} · Ret: ${fmtEur(i.withholding)}</span>
+          <span class="badge badge-int">JURO</span>
+        </div>
+      </div>`).join('')
+    : '<div style="color:var(--muted);font-size:13px;padding:8px 0">Nenhum juro</div>';
+}
+
+
+// ── ISIN → Country code (first 2 chars of ISIN) ─────────────────────────────
+const COUNTRY_NAMES = {
+  US:'Estados Unidos', IE:'Irlanda', LU:'Luxemburgo', FR:'França',
+  DE:'Alemanha', GB:'Reino Unido', NL:'Países Baixos', CH:'Suíça',
+  IT:'Itália', ES:'Espanha', SE:'Suécia', DK:'Dinamarca', NO:'Noruega',
+  FI:'Finlândia', BE:'Bélgica', AT:'Áustria', PT:'Portugal', JP:'Japão',
+  CA:'Canadá', AU:'Austrália', HK:'Hong Kong', SG:'Singapura', KY:'Ilhas Cayman',
+  BR:'Brasil', CN:'China', KR:'Coreia do Sul', TW:'Taiwan', IN:'Índia',
+};
+// ETF detection via ISIN domicile + exclusion list for known IE/LU stocks
+// IE = Ireland (iShares, Vanguard, VanEck UCITS ETFs) — but some stocks too (Accenture, Pentair)
+// LU = Luxembourg (Amundi, Xtrackers ETFs)
+// Exclusion list: known IE/LU domiciled stocks (not ETFs)
+const KNOWN_NON_ETF_ISINS = new Set([
+  'IE00B4BNMY34', // Accenture
+  'IE00BLS09M33', // Pentair
+  'IE00B4TX6221', // Medtronic
+  'IE0004906560',  // CRH
+  // add more as needed
+]);
+function isETF(isin) {
+  if (!isin || isin.length < 4) return false;
+  if (KNOWN_NON_ETF_ISINS.has(isin)) return false;
+  const prefix2 = isin.substring(0, 2);
+  return prefix2 === 'IE' || prefix2 === 'LU';
+}
+
+function assetCode(isin) {
+  return isETF(isin) ? 'G20' : 'G01';
+}
+
+function isinToCountry(isin) {
+  if (!isin || isin.length < 2) return { code: '--', name: 'Desconhecido' };
+  const code = isin.substring(0, 2).toUpperCase();
+  return { code, name: COUNTRY_NAMES[code] || code };
+}
+
+function toggleIrsCheck(el) {
+  const id = el.getAttribute('data-card-id');
+  checkedItems[id] = !checkedItems[id];
+  el.classList.toggle('checked', checkedItems[id]);
+  const box = el.querySelector('.irs-checkbox');
+  if (box) box.classList.toggle('checked', checkedItems[id]);
+  updateIrsProgress();
+}
+
+function updateIrsProgress() {
+  const rows = document.querySelectorAll('.irs-check-row');
+  const total = rows.length;
+  const done  = document.querySelectorAll('.irs-check-row.checked').length;
+  const el = document.getElementById('irsProgress');
+  if (el) {
+    el.style.display = 'flex';
+    const textEl = el.querySelector('.irs-progress-text');
+    const fillEl = el.querySelector('.irs-progress-bar-fill');
+    const wrapEl = textEl ? textEl.closest('div').parentElement : null;
+    if (total === 0) {
+      if (wrapEl) wrapEl.style.display = 'none';
+    } else {
+      if (wrapEl) wrapEl.style.display = 'block';
+      textEl.textContent = `${done} de ${total} reportados`;
+      fillEl.style.width = `${total ? (done/total*100) : 0}%`;
+    }
+  }
+}
+
+function renderIRS() {
+  const { fifoSales, dividends, interests, year } = results;
+
+  document.getElementById('irsEmpty').classList.add('hidden');
+  document.getElementById('irsContent').classList.remove('hidden');
+
+  // ── Quadro 9.2 — one card per lot (no grouping) ─────────────────────────────
+  let total901 = 0, total902 = 0, total903 = 0, totalGL = 0;
+  const q92rows = fifoSales.flatMap(s =>
+    s.lots.map((lot, li) => {
+      const country     = isinToCountry(s.isin || '');
+      const lotFraction = lot.shares / s.shares;
+      const lotSellChg  = (s.sellCharges || 0) * lotFraction;
+      const lotRevNet   = s.sellPrice * lot.shares; // 901: gross revenue
+      const lotAcq      = lot.shares * lot.price;           // 902
+      const lotCost     = lotAcq + (lot.charges || 0);      // for GL
+      const enc         = lotSellChg + (lot.charges || 0);
+      const gl          = lotRevNet - lotCost;
+      const label       = s.lots.length > 1 ? `${s.ticker} — lote ${li+1}/${s.lots.length}` : s.ticker;
+      const assetName    = s.name && s.name !== s.ticker ? s.name : '';
+      total901 += lotRevNet; total902 += lotAcq; total903 += enc; totalGL += gl;
+      const cardId = `q92_${s.ticker}_${s.broker}_${fmtDate(s.date)}_${fmtDate(lot.date)}_${li}`.replace(/\s+/g,'');
+      const isChecked = !!checkedItems[cardId];
+      return `
+        <div class="irs-check-row ${isChecked?'checked':''}" data-card-id="${cardId}" onclick="toggleIrsCheck(this)">
+          <div class="irs-checkbox ${isChecked?'checked':''}"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+          <div class="irs-card-body">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <div>
+                <div style="font-size:13px;font-weight:700">${label} <span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:5px;background:${BROKER_COLOR[s.broker]||'var(--muted)'}22;color:${BROKER_COLOR[s.broker]||'var(--muted)'};vertical-align:middle">${BROKER_LABEL[s.broker]||s.broker||''}</span></div>
+                ${assetName ? `<div style="font-size:11px;color:var(--muted);margin-top:2px">${assetName}</div>` : ''}
+              </div>
+              <span style="font-family:var(--mono);font-size:14px;font-weight:700;color:${gl>=0?'var(--gain)':'var(--loss)'}">${gl>=0?'+':''}${fmtEur(gl)}</span>
+            </div>
+            <div class="irs-row"><span class="ik">Código</span><span class="iv" style="font-weight:600;color:var(--accent)">${assetCode(s.isin) === 'G20' ? 'G20 — Unidades de participação / ETFs' : 'G01 — Ações'}</span></div>
+            <div class="irs-row"><span class="ik">País fonte</span><span class="iv">${country.code} — ${country.name}</span></div>
+            <div class="irs-row"><span class="ik">Data de realização</span><span class="iv">${fmtDate(s.date)}</span></div>
+            <div class="irs-row"><span class="ik" style="font-weight:600;color:var(--text)">Valor de realização (901)</span><span class="iv">${fmtEur(lotRevNet)}</span></div>
+            <div class="irs-row"><span class="ik">Data de aquisição</span><span class="iv">${fmtDate(lot.date)}</span></div>
+            <div class="irs-row"><span class="ik" style="font-weight:600;color:var(--text)">Valor de aquisição (902)</span><span class="iv">${fmtEur(lotAcq)}</span></div>
+            <div class="irs-row"><span class="ik" style="font-weight:600;color:var(--text)">Despesas e encargos (903)</span><span class="iv">${fmtEur(enc)}</span></div>
+            <div class="irs-row"><span class="ik" style="font-weight:600;color:var(--text)">Imposto pago no estrangeiro (904)</span><span class="iv" style="color:var(--muted)">0,00 €</span></div>
+          </div>
+        </div>`;
+    })
+  ).join('');
+
+  // ── Quadro 8A — Dividends: aggregate by (country) ─────────────────────────
+  // Key: country code — all dividends from same country share E11
+  const byCountryDiv = {};
+  for (const d of dividends) {
+    const country = isinToCountry(d.isin || '');
+    const k = country.code;
+    if (!byCountryDiv[k]) byCountryDiv[k] = { country, items: new Map(), gross: 0, wh: 0 };
+    // Map ticker → name
+    if (!byCountryDiv[k].items.has(d.ticker)) byCountryDiv[k].items.set(d.ticker, d.name || d.ticker);
+    byCountryDiv[k].gross += d.gross;
+    byCountryDiv[k].wh   += d.withholding;
+  }
+
+  const q8aDiv = Object.values(byCountryDiv).map(g => {
+    const cardId = `q8adiv_${g.country.code}`;
+    const isChecked = !!checkedItems[cardId];
+    return `
+    <div class="irs-check-row ${isChecked?'checked':''}" data-card-id="${cardId}" onclick="toggleIrsCheck(this)">
+      <div class="irs-checkbox ${isChecked?'checked':''}"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+      <div class="irs-card-body">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div>
+            <div style="font-size:13px;font-weight:700">${g.country.code} — ${g.country.name}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:1px">${[...g.items.keys()].join(', ')}</div>
+          </div>
+          <span style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--dividend)">${fmtEur(g.gross)}</span>
+        </div>
+        <div class="irs-row"><span class="ik">Código de rendimento</span><span class="iv" style="color:var(--dividend);font-weight:600">E11 — Dividendos ou lucros sem retenção em Portugal</span></div>
+        <div class="irs-row"><span class="ik">País fonte</span><span class="iv">${g.country.code} — ${g.country.name}</span></div>
+        <div class="irs-row" style="background:rgba(247,201,72,0.07);margin:0 -4px;padding:8px 4px;border-radius:6px">
+          <span class="ik" style="font-weight:600;color:var(--text)">Rendimento bruto (801)</span><span class="iv">${fmtEur(g.gross)}</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin:8px 0 4px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px">Imposto pago no estrangeiro</div>
+        <div class="irs-row" style="background:rgba(247,201,72,0.07);margin:0 -4px;padding:8px 4px;border-radius:6px">
+          <span class="ik" style="font-weight:600;color:var(--text)">No país da fonte</span><span class="iv">${fmtEur(g.wh)}</span>
+        </div>
+        <div class="irs-row"><span class="ik">Código do país</span><span class="iv" style="color:var(--muted)">—</span></div>
+        <div class="irs-row"><span class="ik">Imposto retido</span><span class="iv" style="color:var(--muted)">—</span></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // ── Quadro 8A — Interest: aggregate by (country+code) ─────────────────────
+  // T212 → CY/E21, DEGIRO → NL/E21
+  const byCountryInt = {};
+  for (const i of interests) {
+    const country = i.broker === 'T212' ? { code:'CY', name:'Chipre' } : { code:'NL', name:'Países Baixos' };
+    const k = country.code;
+    if (!byCountryInt[k]) byCountryInt[k] = { country, brokers: new Set(), gross: 0, wh: 0 };
+    byCountryInt[k].brokers.add(i.broker === 'T212' ? 'Trading 212' : 'DEGIRO');
+    byCountryInt[k].gross += i.gross;
+    byCountryInt[k].wh   += i.withholding;
+  }
+
+  const q8aInt = Object.values(byCountryInt).map(g => {
+    const cardId = `q8aint_${g.country.code}`;
+    const isChecked = !!checkedItems[cardId];
+    return `
+    <div class="irs-check-row ${isChecked?'checked':''}" data-card-id="${cardId}" onclick="toggleIrsCheck(this)">
+      <div class="irs-checkbox ${isChecked?'checked':''}"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+      <div class="irs-card-body">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div>
+            <div style="font-size:13px;font-weight:700">${g.country.code} — ${g.country.name}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:1px">Juros sobre numerário · ${[...g.brokers].join(', ')}</div>
+          </div>
+          <span style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--interest)">${fmtEur(g.gross)}</span>
+        </div>
+        <div class="irs-row"><span class="ik">Código de rendimento</span><span class="iv" style="color:var(--interest);font-weight:600">E21 — Juros e rendimentos equiparados</span></div>
+        <div class="irs-row"><span class="ik">País fonte</span><span class="iv">${g.country.code} — ${g.country.name}</span></div>
+        <div class="irs-row" style="background:rgba(167,139,250,0.07);margin:0 -4px;padding:8px 4px;border-radius:6px">
+          <span class="ik" style="font-weight:600;color:var(--text)">Rendimento bruto (801)</span><span class="iv">${fmtEur(g.gross)}</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin:8px 0 4px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px">Imposto pago no estrangeiro</div>
+        <div class="irs-row" style="background:rgba(167,139,250,0.07);margin:0 -4px;padding:8px 4px;border-radius:6px">
+          <span class="ik" style="font-weight:600;color:var(--text)">No país da fonte</span><span class="iv">${fmtEur(g.wh)}</span>
+        </div>
+        <div class="irs-row"><span class="ik">Código do país</span><span class="iv" style="color:var(--muted)">—</span></div>
+        <div class="irs-row"><span class="ik">Imposto retido</span><span class="iv" style="color:var(--muted)">—</span></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const totalDiv   = dividends.reduce((s,d) => s + d.gross, 0);
+  const totalDivWH = dividends.reduce((s,d) => s + d.withholding, 0);
+  const totalInt   = interests.reduce((s,i) => s + i.gross, 0);
+  const totalIntWH = interests.reduce((s,i) => s + i.withholding, 0);
+
+  document.getElementById('irsBlocks').innerHTML = `
+    <div class="irs-block">
+      <div class="irs-block-title" style="color:var(--accent)">Anexo J · Quadro 9.2 — Mais-valias</div>
+      <div style="font-size:11px;color:var(--muted);margin:-4px 0 14px">Categoria G · agregado por país · tickers identificados em cada linha</div>
+      ${fifoSales.length ? q92rows : '<div style="color:var(--muted);font-size:13px;padding:8px 0">Nenhuma venda no ano selecionado</div>'}
+      ${fifoSales.length ? `
+      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:8px">
+        <div class="irs-row"><span class="ik" style="font-weight:700;color:var(--text)">Total 901</span><span class="iv">${fmtEur(total901)}</span></div>
+        <div class="irs-row"><span class="ik" style="font-weight:700;color:var(--text)">Total 902</span><span class="iv">${fmtEur(total902)}</span></div>
+        <div class="irs-row"><span class="ik" style="font-weight:700;color:var(--text)">Total 903</span><span class="iv">${fmtEur(total903)}</span></div>
+        <div class="irs-row"><span class="ik" style="font-weight:700;color:var(--text)">Resultado líquido</span><span class="iv ${totalGL>=0?'gain':'loss'}">${totalGL>=0?'+':''}${fmtEur(totalGL)}</span></div>
+      </div>` : ''}
+    </div>
+
+    <div class="irs-block">
+      <div class="irs-block-title" style="color:var(--dividend)">Anexo J · Quadro 8A — Dividendos (E11)</div>
+      <div style="font-size:11px;color:var(--muted);margin:-4px 0 14px">Categoria E · um cartão por país fonte</div>
+      ${dividends.length ? q8aDiv : '<div style="color:var(--muted);font-size:13px;padding:8px 0">Nenhum dividendo no ano selecionado</div>'}
+      ${dividends.length ? `
+      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:8px">
+        <div class="irs-row"><span class="ik" style="font-weight:700;color:var(--text)">Total 801</span><span class="iv">${fmtEur(totalDiv)}</span></div>
+        <div class="irs-row"><span class="ik" style="font-weight:700;color:var(--text)">Total 802</span><span class="iv">${fmtEur(totalDivWH)}</span></div>
+      </div>` : ''}
+    </div>
+
+    <div class="irs-block">
+      <div class="irs-block-title" style="color:var(--interest)">Anexo J · Quadro 8A — Juros (E21)</div>
+      <div style="font-size:11px;color:var(--muted);margin:-4px 0 14px">Categoria E · um cartão por país fonte</div>
+      ${interests.length ? q8aInt : '<div style="color:var(--muted);font-size:13px;padding:8px 0">Nenhum juro no ano selecionado</div>'}
+      ${interests.length ? `
+      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:8px">
+        <div class="irs-row"><span class="ik" style="font-weight:700;color:var(--text)">Total 801</span><span class="iv">${fmtEur(totalInt)}</span></div>
+        <div class="irs-row"><span class="ik" style="font-weight:700;color:var(--text)">Total 802</span><span class="iv">${fmtEur(totalIntWH)}</span></div>
+      </div>` : ''}
+    </div>
+
+    <div class="irs-note">
+      ⚠️ <strong>Nota:</strong> Anexo J · Quadro 9.2 → Categoria G (28%). Quadro 8A → E11 dividendos, E21 juros (28%). Consulta um contabilista certificado.
+    </div>
+  `;
+  updateIrsProgress();
+}
+
+
+function dl(filename, content, mime) {
+  // iOS Safari doesn't support Blob download — open as data URI in new tab instead
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  if (isIOS) {
+    const encoded = mime === 'text/csv'
+      ? 'data:text/csv;charset=utf-8,' + encodeURIComponent(content)
+      : 'data:application/json;charset=utf-8,' + encodeURIComponent(content);
+    // Open in new tab — user can then Share → Save to Files
+    const w = window.open(encoded, '_blank');
+    if (!w) {
+      // fallback: show in a modal for copy-paste
+      showDataModal(filename, content);
+    }
+  } else {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([content], { type: mime }));
+    a.download = filename;
+    a.click();
+  }
+}
+
+function showDataModal(filename, content) {
+  // Remove existing modal if any
+  const existing = document.getElementById('dataModal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'dataModal';
+  modal.style.cssText = `
+    position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.85);
+    display:flex;flex-direction:column;padding:env(safe-area-inset-top,20px) 16px env(safe-area-inset-bottom,20px);
+  `;
+  modal.innerHTML = `
+    <div style="background:var(--surface);border-radius:16px;flex:1;display:flex;flex-direction:column;overflow:hidden;margin-top:8px">
+      <div style="padding:16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:15px;font-weight:700">${filename}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Seleciona tudo e copia</div>
+        </div>
+        <button onclick="document.getElementById('dataModal').remove()"
+          style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 14px;font-size:13px;font-family:var(--sans)">
+          Fechar
+        </button>
+      </div>
+      <textarea readonly id="modalText"
+        style="flex:1;background:var(--surface2);color:var(--text);border:none;padding:14px;font-family:var(--mono);font-size:11px;line-height:1.5;resize:none;outline:none;-webkit-user-select:all;user-select:all"
+      >${content.replace(/</g,'&lt;')}</textarea>
+      <div style="padding:12px 16px;border-top:1px solid var(--border)">
+        <button onclick="selectAndCopy()"
+          style="width:100%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:12px;padding:13px;font-size:15px;font-weight:600;font-family:var(--sans)">
+          Copiar tudo
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  // Auto-select text
+  setTimeout(() => {
+    const ta = document.getElementById('modalText');
+    if (ta) { ta.focus(); ta.select(); }
+  }, 100);
+}
+
+function selectAndCopy() {
+  const ta = document.getElementById('modalText');
+  if (!ta) return;
+  ta.select();
+  try {
+    document.execCommand('copy');
+    const btn = ta.parentElement.querySelector('button');
+    if (btn) { btn.textContent = '✓ Copiado!'; setTimeout(() => { btn.textContent = 'Copiar tudo'; }, 2000); }
+  } catch(e) {}
+}
+</script>
+</body>
+</html>
