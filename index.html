@@ -1,6 +1,6 @@
 <!--
   IRS Wizard
-  Versão: 1.7.1
+  Versão: 1.8.0
   Última atualização: 2026-06-20
 
   Para saber se este é o ficheiro mais recente: compara o número de versão
@@ -331,7 +331,7 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
         <div class="how-step"><div class="step-num">2</div><div class="step-text">Clica o ícone de <strong>Download</strong> → <strong>CSV</strong></div></div>
       </div>
       <div style="text-align:center;margin-top:18px;padding-bottom:4px">
-        <button id="versionTag" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:11px;font-family:var(--mono);padding:6px 12px;cursor:pointer">v1.7.1 · Notas de versão</button>
+        <button id="versionTag" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:11px;font-family:var(--mono);padding:6px 12px;cursor:pointer">v1.8.0 · Notas de versão</button>
       </div>
     </div>
 
@@ -493,7 +493,7 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
       <div style="padding:16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
         <div>
           <div style="font-size:15px;font-weight:700">IRS Wizard</div>
-          <div id="versionModalSubtitle" style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:1px">Versão 1.7.1</div>
+          <div id="versionModalSubtitle" style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:1px">Versão 1.8.0</div>
           <div id="versionModalCopyright" style="font-size:10px;color:var(--muted);margin-top:3px">© 2026 IRS Wizard</div>
           <div style="font-size:10px;color:var(--muted);margin-top:1px">Feito com ❤️ em Portugal</div>
         </div>
@@ -631,12 +631,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ── Version / changelog ──────────────────────────────────────────────────────
 // ⚠️ Ao alterar esta versão, atualiza também o comentário no topo do ficheiro (linha 1-9)
-const APP_VERSION = '1.7.1';
+const APP_VERSION = '1.8.0';
 
 // Check the live deployed file in the background for a newer version.
 // Catches the case where iOS serves a stale cached copy of this page (common
 // with "Add to Home Screen" PWAs) even after the server has the latest file.
+let lastUpdateCheckAt = 0;
 function checkForUpdate() {
+  const now = Date.now();
+  if (now - lastUpdateCheckAt < 3000) return; // throttle: skip if checked in the last 3s
+  lastUpdateCheckAt = now;
   fetch(location.href, { cache: 'no-store' })
     .then(r => r.text())
     .then(html => {
@@ -674,9 +678,22 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') checkForUpdate();
   });
+  // iOS PWAs don't always fire visibilitychange reliably when the app is
+  // brought back from the background (e.g. swiping up and reopening it).
+  // pageshow (including the bfcache-restore case) and window focus cover
+  // those resume paths too, so the update check runs whenever the app
+  // becomes active again, not just on the very first load.
+  window.addEventListener('pageshow', () => checkForUpdate());
+  window.addEventListener('focus', () => checkForUpdate());
 });
 
 const CHANGELOG = [
+  { version: '1.8.0', notes: [
+    'Navegação por gestos: deslizar para a esquerda/direita no conteúdo avança ou recua entre separadores, seguindo a ordem Importar → Resumo → FIFO → Posições → Rendimentos → IRS → Transações',
+  ]},
+  { version: '1.7.2', notes: [
+    'A verificação de nova versão agora também corre ao reabrir a app (gesto de puxar para cima / trocar de app e voltar), não só na primeira abertura',
+  ]},
   { version: '1.7.1', notes: [
     'Corrigido: rodar o telemóvel para modo paisagem causava layout desorganizado (menu sobreposto, botões deslocados). Agora a app mostra um aviso a pedir para rodar de volta, em vez de tentar renderizar um layout não suportado.',
   ]},
@@ -917,6 +934,7 @@ function injectScreenFooters() {
 
 const screenScrollPositions = {}; // remembers scroll offset per screen
 const SCREENS_UNDER_MORE = ['txns', 'positions']; // screens reachable only via the "Mais" menu
+const SWIPE_SCREEN_ORDER = ['import', 'summary', 'fifo', 'income', 'irs', 'txns', 'positions'];
 
 function goTo(screen) {
   const mainEl = document.getElementById('main');
@@ -943,6 +961,50 @@ function goTo(screen) {
   const scrollBtn = document.getElementById('scrollTopBtn');
   if (scrollBtn) scrollBtn.classList.toggle('hidden', mainEl.scrollTop < 200);
 }
+
+// ── Swipe navigation ──────────────────────────────────────────────────────────
+// Swiping left/right anywhere in the content area jumps to the next/previous
+// screen, following the same order as the bottom nav (with Posições and
+// Transações slotted in where they'd logically sit, even though they only
+// have a dedicated button inside the "Mais" menu).
+(function setupSwipeNavigation() {
+  const mainEl = document.getElementById('main');
+  if (!mainEl) return;
+
+  let startX = 0, startY = 0, tracking = false;
+  const SWIPE_MIN_DISTANCE = 60;   // px — minimum horizontal travel to count as a swipe
+  const SWIPE_MAX_VERTICAL = 60;   // px — if vertical drift exceeds this, treat it as a scroll instead
+
+  mainEl.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1) return; // ignore multi-touch (pinch etc.)
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    tracking = true;
+  }, { passive: true });
+
+  mainEl.addEventListener('touchend', e => {
+    if (!tracking) return;
+    tracking = false;
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+    const dx = endX - startX;
+    const dy = endY - startY;
+    if (Math.abs(dx) < SWIPE_MIN_DISTANCE) return;       // too short to be a deliberate swipe
+    if (Math.abs(dy) > SWIPE_MAX_VERTICAL) return;       // mostly vertical — this was a scroll, not a swipe
+
+    const currentActive = document.querySelector('.screen.active');
+    if (!currentActive) return;
+    const currentScreen = currentActive.id.replace('screen-', '');
+    const idx = SWIPE_SCREEN_ORDER.indexOf(currentScreen);
+    if (idx === -1) return; // current screen isn't part of the swipe sequence
+
+    if (dx < 0 && idx < SWIPE_SCREEN_ORDER.length - 1) {
+      goTo(SWIPE_SCREEN_ORDER[idx + 1]); // swipe left → next screen
+    } else if (dx > 0 && idx > 0) {
+      goTo(SWIPE_SCREEN_ORDER[idx - 1]); // swipe right → previous screen
+    }
+  }, { passive: true });
+})();
 
 // ── File upload ─────────────────────────────────────────────────────────────
 let loadedFiles = []; // [{name, broker, rows}]
