@@ -1,6 +1,6 @@
 <!--
   IRS Wizard
-  Versão: 1.7.0
+  Versão: 1.7.1
   Última atualização: 2026-06-20
 
   Para saber se este é o ficheiro mais recente: compara o número de versão
@@ -266,6 +266,12 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
 </style>
 </head>
 <body>
+<div id="rotateLockOverlay" class="hidden" style="position:fixed;inset:0;z-index:300;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center">
+  <div style="font-size:56px;margin-bottom:20px">📱</div>
+  <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px">Roda o telemóvel</div>
+  <div style="font-size:13px;color:var(--muted);max-width:280px;line-height:1.5">Esta app foi desenhada apenas para modo retrato (vertical). Roda o teu telemóvel de volta para continuares a usá-la.</div>
+</div>
+
 <div id="app">
 
   <!-- Top bar -->
@@ -325,7 +331,7 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
         <div class="how-step"><div class="step-num">2</div><div class="step-text">Clica o ícone de <strong>Download</strong> → <strong>CSV</strong></div></div>
       </div>
       <div style="text-align:center;margin-top:18px;padding-bottom:4px">
-        <button id="versionTag" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:11px;font-family:var(--mono);padding:6px 12px;cursor:pointer">v1.7.0 · Notas de versão</button>
+        <button id="versionTag" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:11px;font-family:var(--mono);padding:6px 12px;cursor:pointer">v1.7.1 · Notas de versão</button>
       </div>
     </div>
 
@@ -487,7 +493,7 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
       <div style="padding:16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
         <div>
           <div style="font-size:15px;font-weight:700">IRS Wizard</div>
-          <div id="versionModalSubtitle" style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:1px">Versão 1.7.0</div>
+          <div id="versionModalSubtitle" style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:1px">Versão 1.7.1</div>
           <div id="versionModalCopyright" style="font-size:10px;color:var(--muted);margin-top:3px">© 2026 IRS Wizard</div>
           <div style="font-size:10px;color:var(--muted);margin-top:1px">Feito com ❤️ em Portugal</div>
         </div>
@@ -571,6 +577,23 @@ document.addEventListener('gestureend', e => e.preventDefault());
   }, { passive: false });
 })();
 
+// ── Portrait-only lock ────────────────────────────────────────────────────────
+// iOS Safari has no real orientation-lock API, so instead we detect landscape
+// and show a full-screen "please rotate back" overlay, hiding the app's own
+// content underneath. This avoids the layout briefly breaking/jittering during
+// the rotation animation, since the app simply doesn't try to render in landscape.
+function checkOrientation() {
+  const overlay = document.getElementById('rotateLockOverlay');
+  const app = document.getElementById('app');
+  if (!overlay || !app) return;
+  const isLandscape = window.innerWidth > window.innerHeight;
+  overlay.classList.toggle('hidden', !isLandscape);
+  app.style.display = isLandscape ? 'none' : 'flex';
+}
+window.addEventListener('resize', checkOrientation);
+window.addEventListener('orientationchange', checkOrientation);
+document.addEventListener('DOMContentLoaded', checkOrientation);
+
 // ── Theme toggle ──────────────────────────────────────────────────────────────
 (function initTheme() {
   let saved = null;
@@ -608,7 +631,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ── Version / changelog ──────────────────────────────────────────────────────
 // ⚠️ Ao alterar esta versão, atualiza também o comentário no topo do ficheiro (linha 1-9)
-const APP_VERSION = '1.7.0';
+const APP_VERSION = '1.7.1';
 
 // Check the live deployed file in the background for a newer version.
 // Catches the case where iOS serves a stale cached copy of this page (common
@@ -654,6 +677,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 const CHANGELOG = [
+  { version: '1.7.1', notes: [
+    'Corrigido: rodar o telemóvel para modo paisagem causava layout desorganizado (menu sobreposto, botões deslocados). Agora a app mostra um aviso a pedir para rodar de volta, em vez de tentar renderizar um layout não suportado.',
+  ]},
   { version: '1.7.0', notes: [
     'Deteção automática de histórico de compras incompleto: a app avisa no Resumo quando encontra vendas sem compras suficientes registadas',
     'Novo disclaimer no ecrã Importar e no FAQ sobre a importância de importar o histórico completo de transações',
