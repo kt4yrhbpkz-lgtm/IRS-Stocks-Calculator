@@ -1,6 +1,6 @@
 <!--
   IRS Wizard
-  Versão: 1.8.0
+  Versão: 1.9.0
   Última atualização: 2026-06-20
 
   Para saber se este é o ficheiro mais recente: compara o número de versão
@@ -89,6 +89,7 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
 #main {
   flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
   padding-bottom: calc(var(--nav-h) + var(--safe-bottom) + 16px);
+  position: relative;
 }
 
 /* ── Bottom nav ── */
@@ -288,6 +289,9 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
 
   <!-- Main scrollable area -->
   <div id="main">
+    <div id="pullToRefreshIndicator" style="position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:center;height:0;overflow:hidden;color:var(--muted);font-size:12px;font-weight:600;transition:height 0.15s;z-index:5">
+      <span id="pullToRefreshText">↓ Puxa para verificar atualizações</span>
+    </div>
     <button id="scrollTopBtn" class="hidden" aria-label="Voltar ao topo" style="position:fixed;right:16px;bottom:calc(var(--nav-h) + var(--safe-bottom) + 16px);width:44px;height:44px;border-radius:50%;background:var(--accent);border:none;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.35);z-index:50;cursor:pointer">↑</button>
 
     <!-- ── SCREEN: Import ── -->
@@ -331,7 +335,7 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
         <div class="how-step"><div class="step-num">2</div><div class="step-text">Clica o ícone de <strong>Download</strong> → <strong>CSV</strong></div></div>
       </div>
       <div style="text-align:center;margin-top:18px;padding-bottom:4px">
-        <button id="versionTag" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:11px;font-family:var(--mono);padding:6px 12px;cursor:pointer">v1.8.0 · Notas de versão</button>
+        <button id="versionTag" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:11px;font-family:var(--mono);padding:6px 12px;cursor:pointer">v1.9.0 · Notas de versão</button>
       </div>
     </div>
 
@@ -493,7 +497,7 @@ html, body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--
       <div style="padding:16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
         <div>
           <div style="font-size:15px;font-weight:700">IRS Wizard</div>
-          <div id="versionModalSubtitle" style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:1px">Versão 1.8.0</div>
+          <div id="versionModalSubtitle" style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:1px">Versão 1.9.0</div>
           <div id="versionModalCopyright" style="font-size:10px;color:var(--muted);margin-top:3px">© 2026 IRS Wizard</div>
           <div style="font-size:10px;color:var(--muted);margin-top:1px">Feito com ❤️ em Portugal</div>
         </div>
@@ -631,7 +635,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ── Version / changelog ──────────────────────────────────────────────────────
 // ⚠️ Ao alterar esta versão, atualiza também o comentário no topo do ficheiro (linha 1-9)
-const APP_VERSION = '1.8.0';
+const APP_VERSION = '1.9.0';
 
 // Check the live deployed file in the background for a newer version.
 // Catches the case where iOS serves a stale cached copy of this page (common
@@ -688,6 +692,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 const CHANGELOG = [
+  { version: '1.9.0', notes: [
+    'Puxar para baixo no topo de qualquer separador agora verifica imediatamente se há uma nova versão disponível (pull-to-refresh)',
+  ]},
   { version: '1.8.0', notes: [
     'Navegação por gestos: deslizar para a esquerda/direita no conteúdo avança ou recua entre separadores, seguindo a ordem Importar → Resumo → FIFO → Rendimentos → IRS → Transações → Posições',
   ]},
@@ -1002,6 +1009,56 @@ function goTo(screen) {
       goTo(SWIPE_SCREEN_ORDER[idx + 1]); // swipe left → next screen
     } else if (dx > 0 && idx > 0) {
       goTo(SWIPE_SCREEN_ORDER[idx - 1]); // swipe right → previous screen
+    }
+  }, { passive: true });
+})();
+
+// ── Pull-to-refresh: checks for a new app version ───────────────────────────────
+// Pulling down past the top of the scroll area (when already scrolled to the
+// very top) reveals a small indicator and, once released past the threshold,
+// triggers checkForUpdate() — same check used elsewhere, just manually invoked.
+(function setupPullToRefresh() {
+  const mainEl = document.getElementById('main');
+  const indicator = document.getElementById('pullToRefreshIndicator');
+  const indicatorText = document.getElementById('pullToRefreshText');
+  if (!mainEl || !indicator) return;
+
+  const PULL_THRESHOLD = 70; // px of pull needed to trigger a check on release
+  const PULL_MAX = 90;       // visual cap so the indicator doesn't grow forever
+  let pullStartY = 0;
+  let pulling = false;
+  let triggered = false;
+
+  mainEl.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1) return;
+    // Only start tracking a pull if we're already at the very top — otherwise
+    // this is just a normal scroll gesture partway down the content.
+    if (mainEl.scrollTop <= 0) {
+      pullStartY = e.touches[0].clientY;
+      pulling = true;
+      triggered = false;
+    } else {
+      pulling = false;
+    }
+  }, { passive: true });
+
+  mainEl.addEventListener('touchmove', e => {
+    if (!pulling || e.touches.length !== 1) return;
+    const dy = e.touches[0].clientY - pullStartY;
+    if (dy <= 0) { indicator.style.height = '0px'; return; }
+    const capped = Math.min(dy, PULL_MAX);
+    indicator.style.height = capped + 'px';
+    indicatorText.textContent = capped >= PULL_THRESHOLD ? '↻ Largar para verificar' : '↓ Puxa para verificar atualizações';
+  }, { passive: true });
+
+  mainEl.addEventListener('touchend', e => {
+    if (!pulling) return;
+    pulling = false;
+    const finalHeight = parseInt(indicator.style.height) || 0;
+    indicator.style.height = '0px';
+    if (finalHeight >= PULL_THRESHOLD && !triggered) {
+      triggered = true;
+      checkForUpdate();
     }
   }, { passive: true });
 })();
